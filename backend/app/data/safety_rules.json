@@ -1,0 +1,15 @@
+{
+  "red_flags": [
+    {"code": "chest_pain", "label_zh": "胸痛", "message": "你提到有胸痛，本产品不能继续给你训练建议，请尽快寻求专业医疗帮助。"},
+    {"code": "fainting", "label_zh": "晕厥/眩晕", "message": "你提到有晕厥或眩晕，本产品不能继续给你训练建议，请尽快寻求专业医疗帮助。"},
+    {"code": "severe_pain", "label_zh": "需要医疗评估的剧烈疼痛", "message": "你提到有剧烈疼痛，建议先停止训练并寻求专业医疗帮助，本产品暂不给出训练建议。"},
+    {"code": "abnormal_bleeding", "label_zh": "异常出血（非经期）", "message": "你提到有异常出血，建议尽快寻求专业医疗帮助，本产品暂不给出训练建议。"},
+    {"code": "fever", "label_zh": "发热", "message": "你提到有发热，建议休息并视情况就医，本产品暂不给出训练建议。"}
+  ],
+  "injured_area_blocks": {
+    "knee": ["squat_pattern", "lunge_pattern"],
+    "lower_back": ["hinge_pattern"],
+    "shoulder": ["horizontal_push", "vertical_push", "lateral_raise"],
+    "wrist": ["horizontal_push"]
+  }
+}
