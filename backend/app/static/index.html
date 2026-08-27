@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CycleFit AI · 临时验收界面</title>
+<style>
+  :root { --teal:#2A9D8F; --teal-d:#1F7A6E; --pink:#E76F91; --ink:#1F2937; --muted:#5B6472; --bg:#F7F9FA; --card:#fff; --line:#E3E8EE; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); line-height:1.6; }
+  .wrap { max-width:720px; margin:0 auto; padding:24px 16px 80px; }
+  h1 { font-size:22px; color:var(--teal-d); }
+  h2 { font-size:16px; margin:0 0 12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:16px; }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  input,select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; }
+  .row > div { flex:1; min-width:140px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { border:1px solid var(--line); border-radius:20px; padding:6px 12px; font-size:13px; cursor:pointer; user-select:none; background:#fff; }
+  .chip.on { background:var(--teal); color:#fff; border-color:var(--teal); }
+  button.primary { width:100%; padding:12px; background:var(--teal); color:#fff; border:none; border-radius:10px; font-size:15px; cursor:pointer; }
+  button.primary:disabled { background:#A9CBC4; cursor:not-allowed; }
+  .banner { border-radius:12px; padding:14px 16px; margin:12px 0; }
+  .banner.stop { background:#FDECEC; border:1px solid #D64545; color:#9B1C1C; }
+  .banner.comfort { background:#FBE4EC; border:1px solid var(--pink); color:#7A2A43; }
+  .banner.info { background:#EAF6F4; border:1px solid var(--teal); color:var(--teal-d); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; }
+  th { color:var(--muted); font-weight:600; }
+  .tag { display:inline-block; background:#EAF6F4; color:var(--teal-d); border-radius:6px; padding:1px 8px; font-size:12px; margin-right:4px; }
+  .muted { color:var(--muted); font-size:13px; }
+  .section-title { font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:14px 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CycleFit AI <span class="muted">· 临时验收界面（仅用于判断核心链路，非正式前端）</span></h1>
+
+  <div class="card" id="step1">
+    <h2>① 建立档案</h2>
+    <div class="row">
+      <div><label>目标</label><select id="goal">
+        <option value="health">保持健康</option><option value="shape">增肌塑形</option><option value="strength">提升力量</option>
+      </select></div>
+      <div><label>经验</label><select id="experience">
+        <option value="beginner">零基础/初级</option><option value="intermediate">中级</option><option value="advanced">高级</option>
+      </select></div>
+    </div>
+    <div class="row">
+      <div><label>每周训练次数</label><input id="freq" type="number" value="3" min="1" max="7"></div>
+      <div><label>单次时长(分钟)</label><input id="minutes" type="number" value="40" min="10" max="180"></div>
+    </div>
+    <label>可用的器械（可多选，不选=居家徒手）</label>
+    <div class="chips" id="equip">
+      <span class="chip" data-v="dumbbell">哑铃</span><span class="chip" data-v="barbell">杠铃</span>
+      <span class="chip" data-v="bench">卧推凳</span><span class="chip" data-v="cable">龙门架/绳索</span>
+      <span class="chip" data-v="kettlebell">壶铃</span><span class="chip" data-v="resistance_band">弹力带</span>
+      <span class="chip" data-v="pullup_bar">引体杠</span>
+    </div>
+    <label>伤病/不适部位（可多选）</label>
+    <div class="chips" id="injured">
+      <span class="chip" data-v="knee">膝盖</span><span class="chip" data-v="lower_back">下背</span>
+      <span class="chip" data-v="shoulder">肩</span><span class="chip" data-v="wrist">手腕</span>
+    </div>
+    <label>周期/激素状态</label>
+    <select id="cycle">
+      <option value="natural">自然周期</option><option value="hormonal">激素避孕</option>
+      <option value="irregular">周期不规律</option><option value="unknown">不愿填写</option>
+    </select>
+    <br><br><button class="primary" onclick="doOnboarding()">提交档案</button>
+  </div>
+
+  <div class="card" id="step2" style="display:none">
+    <h2>② 今日 Check-in（≤30 秒）</h2>
+    <div class="row">
+      <div><label>可用时间(分钟)</label><input id="avail" type="number" value="40" min="10" max="180"></div>
+      <div><label>睡眠(小时)</label><input id="sleep" type="number" value="7" step="0.5" min="0" max="24"></div>
+    </div>
+    <div class="row">
+      <div><label>主观能量(1-5)</label><input id="energy" type="number" value="3" min="1" max="5"></div>
+      <div><label>训练酸痛(0-5)</label><input id="soreness" type="number" value="0" min="0" max="5"></div>
+    </div>
+    <div class="row">
+      <div><label>疼痛/不适</label><select id="pain">
+        <option value="none">无</option><option value="mild">轻微</option><option value="moderate">中等</option>
+      </select></div>
+      <div><label>今天心情</label><select id="mood">
+        <option value="great">很好</option><option value="good">不错</option><option value="ok">平静</option>
+        <option value="low">有点低</option><option value="very_bad">很糟</option>
+      </select></div>
+    </div>
+    <label>红旗症状（如有，系统会停止并建议就医）</label>
+    <div class="chips" id="redflags">
+      <span class="chip" data-v="chest_pain">胸痛</span><span class="chip" data-v="fainting">晕厥/眩晕</span>
+      <span class="chip" data-v="severe_pain">剧烈疼痛</span><span class="chip" data-v="abnormal_bleeding">异常出血</span>
+      <span class="chip" data-v="fever">发热</span>
+    </div>
+    <br><button class="primary" onclick="doCheckin()">生成今日计划</button>
+  </div>
+
+  <div class="card" id="step3" style="display:none">
+    <h2>③ 今日计划</h2>
+    <div id="result"></div>
+  </div>
+
+  <div class="card" id="step4" style="display:none">
+    <h2>④ 训练反馈</h2>
+    <div class="row">
+      <div><label>完成度(0-1)</label><input id="completion" type="number" value="1" step="0.1" min="0" max="1"></div>
+      <div><label>RPE(1-10,可选)</label><input id="rpe" type="number" placeholder="空" min="1" max="10"></div>
+    </div>
+    <div class="row">
+      <div><label>训练后疼痛</label><select id="painAfter">
+        <option value="none">无</option><option value="mild">轻微</option><option value="moderate">中等</option>
+      </select></div>
+      <div><label>训练后心情</label><select id="moodAfter">
+        <option value="great">很好</option><option value="good">不错</option><option value="ok">平静</option>
+        <option value="low">有点低</option><option value="very_bad">很糟</option>
+      </select></div>
+    </div>
+    <label>满意度(1-5)</label><input id="satisfaction" type="number" value="3" min="1" max="5">
+    <br><br><button class="primary" onclick="doFeedback()">提交反馈</button>
+  </div>
+</div>
+
+<script>
+let profileId = null, planId = null;
+document.querySelectorAll('.chips').forEach(grp => {
+  grp.querySelectorAll('.chip').forEach(c => c.onclick = () => c.classList.toggle('on'));
+});
+const vals = id => Array.from(document.querySelectorAll('#'+id+' .chip.on')).map(c => c.dataset.v);
+
+async function doOnboarding(){
+  const body = {
+    goal: val('goal'), experience_level: val('experience'),
+    weekly_frequency: +val('freq'), session_minutes: +val('minutes'),
+    equipment: vals('equip'), injured_areas: vals('injured'), cycle_mode: val('cycle')
+  };
+  const r = await fetch('/api/v1/onboarding', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const d = await r.json();
+  profileId = d.profile_id;
+  document.getElementById('step2').style.display='block';
+  document.getElementById('step1').querySelector('button').disabled = true;
+  alert('档案已建立，profile_id=' + profileId + '，继续 Check-in');
+}
+
+async function doCheckin(){
+  const body = {
+    profile_id: profileId, available_minutes: +val('avail'), energy:+val('energy'),
+    sleep_hours:+val('sleep'), soreness:+val('soreness'), pain:val('pain'), mood:val('mood'),
+    red_flags: vals('redflags')
+  };
+  const r = await fetch('/api/v1/checkin', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const d = await r.json();
+  render(d);
+}
+
+function render(d){
+  const el = document.getElementById('result');
+  document.getElementById('step3').style.display='block';
+  if(d.status === 'safety_stop'){
+    el.innerHTML = '<div class="banner stop"><b>安全提示</b><br>' +
+      d.red_flags.map(f=>'· '+f.message).join('<br>') + '</div>';
+    document.getElementById('step4').style.display='none';
+    return;
+  }
+  planId = d.plan_id;
+  let html = '';
+  html += '<div class="banner info"><b>准备度：'+ d.readiness.label +'（'+ d.readiness.score +'分）</b><br>' +
+          '<span class="muted">调整：'+ d.readiness.adjust +' · 置信度 '+ d.confidence +'</span></div>';
+  if(d.comfort_msg){
+    html += '<div class="banner comfort"><b>❤️ '+ d.comfort_msg +'</b><br>' +
+            '<span class="muted">'+ d.rest_suggestion +'</span></div>';
+  }
+  html += '<div class="banner" style="background:#EAF3FF;border:1px solid #4C8DFF;color:#1F3A66"><b>为什么这样安排</b><br>'+ d.rationale_text +'</div>';
+
+  d.plan.blocks.forEach(b => {
+    html += '<div class="section-title">'+ b.title + (b.duration_min? '（'+b.duration_min+'分钟）':'') +'</div>';
+    if(b.items){ html += b.items.map(i=>'<div class="muted">· '+i+'</div>').join(''); }
+    if(b.exercises){
+      html += '<table><tr><th>动作</th><th>组</th><th>次</th><th>RPE</th><th>休息</th><th>部位</th></tr>';
+      b.exercises.forEach(e => {
+        const mus = (e.primary_muscles||[]).map(m=>'<span class="tag">'+m+'</span>').join('');
+        html += '<tr><td>'+e.name_zh+'<br><span class="muted">'+e.name_en+'</span></td><td>'+e.sets+'</td><td>'+e.reps+'</td><td>'+e.rpe+'</td><td>'+e.rest_sec+'s</td><td>'+mus+'</td></tr>';
+      });
+      html += '</table>';
+    }
+  });
+  html += '<br><div class="muted">计划编号 plan_id='+planId+' · 校验状态 '+ d.plan.validation_status +'</div>';
+  el.innerHTML = html;
+  document.getElementById('step4').style.display='block';
+}
+
+async function doFeedback(){
+  const body = {
+    plan_id: planId, completion:+val('completion'),
+    rpe: val('rpe')===''? null : +val('rpe'),
+    pain_after:val('painAfter'), mood_after:val('moodAfter'), satisfaction:+val('satisfaction')
+  };
+  await fetch('/api/v1/feedback', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  alert('反馈已记录，感谢！');
+}
+</script>
+</body>
+</html>
