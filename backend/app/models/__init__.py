@@ -33,7 +33,8 @@ class DailyCheckIn(Base):
     sleep_hours: Mapped[float] = mapped_column(Float)     # 小时
     soreness: Mapped[int] = mapped_column(Integer)        # 0-5
     pain: Mapped[str] = mapped_column(String(16))         # none / mild / moderate
-    mood: Mapped[str] = mapped_column(String(16))         # very_bad / low / ok / good / great
+    diary: Mapped[str] = mapped_column(Text, default="")  # 日记原文（敏感，不写日志）
+    mood: Mapped[str] = mapped_column(String(16))         # 由日记分析得出（very_bad / low / ok / good / great）
     red_flags: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -44,7 +45,8 @@ class MoodRecord(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     profile_id: Mapped[int] = mapped_column(Integer)
     mood: Mapped[str] = mapped_column(String(16))
-    source: Mapped[str] = mapped_column(String(16), default="checkin")  # checkin / manual
+    tag: Mapped[str] = mapped_column(String(16), default="")
+    source: Mapped[str] = mapped_column(String(16), default="diary")  # diary / feedback
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

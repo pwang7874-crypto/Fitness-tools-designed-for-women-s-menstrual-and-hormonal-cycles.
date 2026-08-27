@@ -15,11 +15,11 @@ def test_full_chain():
         assert r.status_code == 200
         profile_id = r.json()["profile_id"]
 
-        # Check-in（情绪低落 → 应附带暖心安慰）
+        # Check-in（日记写出低落 → AI 分析出低心情 → 应附带暖心安慰）
         r = client.post("/api/v1/checkin", json={
             "profile_id": profile_id, "available_minutes": 40,
             "energy": 3, "sleep_hours": 6.5, "soreness": 1,
-            "pain": "none", "mood": "low", "red_flags": []})
+            "pain": "none", "diary": "今天好累好烦，不想动", "red_flags": []})
         assert r.status_code == 200
         d = r.json()
         assert d["status"] == "ok"
@@ -43,7 +43,7 @@ def test_safety_stop_on_red_flag():
         r = client.post("/api/v1/checkin", json={
             "profile_id": profile_id, "available_minutes": 40,
             "energy": 3, "sleep_hours": 7, "soreness": 0,
-            "pain": "none", "mood": "ok", "red_flags": ["chest_pain"]})
+            "pain": "none", "red_flags": ["chest_pain"]})
         d = r.json()
         assert d["status"] == "safety_stop"
         assert d["red_flags"][0]["code"] == "chest_pain"

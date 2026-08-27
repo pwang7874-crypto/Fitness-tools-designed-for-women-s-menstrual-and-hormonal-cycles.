@@ -6,6 +6,10 @@ export const MOODS = [
   { value: "great", label: "很好", emoji: "😄" },
 ];
 
+export const MOOD_EMOJI: Record<string, string> = {
+  very_bad: "😞", low: "😕", ok: "😐", good: "🙂", great: "😄",
+};
+
 export const EQUIPMENT = [
   { value: "dumbbell", label: "哑铃" },
   { value: "barbell", label: "杠铃" },

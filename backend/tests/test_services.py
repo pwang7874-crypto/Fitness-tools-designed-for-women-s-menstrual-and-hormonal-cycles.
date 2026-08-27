@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 """第一层 mock 测试：业务逻辑（安全 / 准备度 / 安慰 / 计划 / 验证）。"""
-from app.services import comfort, plan_engine, readiness, safety, validator
+from app.services import comfort, mood, plan_engine, readiness, safety, validator
+
+
+def test_mood_keyword_fallback():
+    # 无 API Key 时走关键词兑底，主链路不崩
+    assert mood.analyze("今天好累好烦")["mood"] in ("low", "very_bad")
+    assert mood.analyze("今天很开心元气满满")["mood"] in ("good", "great")
+    assert mood.analyze("")["mood"] == "ok"
 
 
 def test_safety_red_flag_hit():

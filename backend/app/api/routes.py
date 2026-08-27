@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from ..core.db import get_db
 from .. import models
 from ..schemas import CheckInIn, FeedbackIn, OnboardingIn
-from ..services import comfort, llm, plan_engine, readiness, safety, validator
+from ..services import comfort, llm, mood, plan_engine, readiness, safety, validator
 
 router = APIRouter(prefix="/api/v1")
 
@@ -61,7 +61,10 @@ def checkin(payload: CheckInIn, db: Session = Depends(get_db)):
         db.commit()
         return {"status": "safety_stop", "red_flags": red_flags}
 
-    # 2) 落库 Check-in + 情绪记录
+    # 2) 日记心情分析（AI 从日记判断心情 + 情绪标签）
+    mood_result = mood.analyze(payload.diary)
+
+    # 3) 落库 Check-in + 情绪记录
     checkin_row = models.DailyCheckIn(
         profile_id=profile.id,
         available_minutes=payload.available_minutes,
@@ -69,25 +72,28 @@ def checkin(payload: CheckInIn, db: Session = Depends(get_db)):
         sleep_hours=payload.sleep_hours,
         soreness=payload.soreness,
         pain=payload.pain,
-        mood=payload.mood,
+        diary=payload.diary or "",
+        mood=mood_result["mood"],
         red_flags=payload.red_flags,
     )
     db.add(checkin_row)
-    db.add(models.MoodRecord(profile_id=profile.id, mood=payload.mood, source="checkin"))
+    db.add(models.MoodRecord(profile_id=profile.id, mood=mood_result["mood"],
+                             tag=mood_result["tag"], source="diary"))
     db.commit()
     db.refresh(checkin_row)
 
-    # 3) 准备度 + 情绪安慰 + 计划
+    # 4) 准备度 + 情绪安慰 + 计划
     readiness_result = readiness.compute(
         energy=payload.energy, sleep_hours=payload.sleep_hours,
-        soreness=payload.soreness, pain=payload.pain, mood=payload.mood)
-    comfort_result = comfort.get_comfort(payload.mood)
+        soreness=payload.soreness, pain=payload.pain, mood=mood_result["mood"])
+    comfort_result = comfort.get_comfort(mood_result["mood"])
 
     profile_dict = {
         "goal": profile.goal, "experience_level": profile.experience_level,
         "equipment": profile.equipment, "injured_areas": profile.injured_areas,
     }
     checkin_dict = payload.model_dump()
+    checkin_dict["mood"] = mood_result["mood"]
     plan = plan_engine.generate_plan(profile_dict, checkin_dict, readiness_result, comfort_result)
 
     # 4) 计划验证器（不可绕过）
@@ -130,6 +136,7 @@ def checkin(payload: CheckInIn, db: Session = Depends(get_db)):
         "status": "ok",
         "checkin_id": checkin_row.id,
         "plan_id": plan_row.id,
+        "mood": mood_result,
         "readiness": readiness_result,
         "confidence": plan["confidence"],
         "comfort_msg": plan["comfort_msg"],
@@ -165,7 +172,7 @@ def insights(profile_id: int, db: Session = Depends(get_db)):
         "session_count": len(sessions),
         "avg_completion": round(sum(s.completion for s in sessions) / len(sessions), 2) if sessions else None,
         "avg_rpe": round(sum(s.rpe for s in sessions if s.rpe) / len([s for s in sessions if s.rpe]), 1) if any(s.rpe for s in sessions) else None,
-        "mood_trend": [{"mood": m.mood, "at": m.created_at.isoformat()} for m in moods],
+        "mood_trend": [{"mood": m.mood, "tag": m.tag, "at": m.created_at.isoformat()} for m in moods],
     }
 
 

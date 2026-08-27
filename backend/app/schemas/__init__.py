@@ -25,7 +25,7 @@ class CheckInIn(BaseModel):
     sleep_hours: float = Field(ge=0, le=24, default=7)
     soreness: int = Field(ge=0, le=5, default=0)
     pain: Pain = "none"
-    mood: Mood = "ok"
+    diary: Optional[str] = None          # 日记：由 AI 判断心情，不再手动选心情
     red_flags: list[str] = Field(default_factory=list)
     notes: Optional[str] = None
 

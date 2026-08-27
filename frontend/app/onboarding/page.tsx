@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { GOALS, EXPERIENCE, EQUIPMENT, INJURED, CYCLE_MODES } from "@/lib/constants";
-import { Card, Field, PillButton, ChipGroup, inputCls, ErrorBanner } from "@/components/ui";
+import { Card, Field, PillButton, ChipGroup, inputCls, ErrorBanner, HeroTitle, PatchBadge } from "@/components/ui";
 
 export default function Onboarding() {
   const router = useRouter();
@@ -35,12 +35,18 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="font-display text-3xl font-bold text-ink">先认识你</h1>
-        <p className="mt-1 text-sm text-moss">我了解你的目标与限制，才会给适合你的计划，而不是套模板。</p>
-      </div>
+    <div>
+      <section className="bg-ink text-cream">
+        <div className="mx-auto flex max-w-3xl items-start justify-between px-4 py-8">
+          <div>
+            <HeroTitle eyebrow="Onboarding · 建档" lines={[{ text: "先认识你" }, { text: "再谈训练", accent: true }]} />
+            <p className="mt-2 text-sm text-cream/70">我了解你的目标与限制，才会给适合你的计划，而不是套模板。</p>
+          </div>
+          <PatchBadge emoji="🌱" rotate={6} />
+        </div>
+      </section>
 
+      <div className="mx-auto -mt-4 max-w-3xl space-y-4 px-4">
       <Card>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="训练目标">
@@ -84,6 +90,7 @@ export default function Onboarding() {
       <PillButton onClick={submit} disabled={busy} className="w-full">
         {busy ? "提交中…" : "生成我的首周计划"}
       </PillButton>
+      </div>
     </div>
   );
 }

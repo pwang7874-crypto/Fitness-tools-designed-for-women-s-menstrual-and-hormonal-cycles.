@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 
 export function Card({
   children,
@@ -11,9 +10,7 @@ export function Card({
   tint?: string;
 }) {
   return (
-    <div
-      className={`rounded-[var(--radius-card)] border border-frost bg-cream-2 p-5 ${tint} ${className}`}
-    >
+    <div className={`rounded-[var(--radius-card)] border border-frost bg-cream-2 p-5 shadow-[var(--shadow-card)] ${tint} ${className}`}>
       {children}
     </div>
   );
@@ -49,13 +46,7 @@ export function PillButton({
   );
 }
 
-export function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs text-moss">{label}</span>
@@ -80,11 +71,8 @@ export function ChipGroup({
   single?: boolean;
 }) {
   const toggle = (v: string) => {
-    if (single) {
-      onChange([v]);
-    } else {
-      onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
-    }
+    if (single) onChange([v]);
+    else onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
   };
   return (
     <div className="flex flex-wrap gap-2">
@@ -115,5 +103,57 @@ export function ErrorBanner({ message }: { message: string }) {
     <div className="rounded-2xl border border-danger bg-danger/10 px-4 py-3 text-sm text-danger">
       {message}
     </div>
+  );
+}
+
+/* Kikin：eyebrow 眉标 + 超大展示标题 */
+export function HeroTitle({
+  eyebrow,
+  lines,
+}: {
+  eyebrow?: string;
+  lines: { text: string; accent?: boolean }[];
+}) {
+  return (
+    <div>
+      {eyebrow && <div className="eyebrow text-meadow">{eyebrow}</div>}
+      <h1 className="font-display font-bold leading-[0.9] tracking-tight text-cream" style={{ fontSize: 48 }}>
+        {lines.map((l, i) => (
+          <span key={i} className={l.accent ? "text-meadow" : ""}>
+            {l.text}
+            {i < lines.length - 1 ? <br /> : null}
+          </span>
+        ))}
+      </h1>
+    </div>
+  );
+}
+
+/* 小标签（药丸） */
+export function Tag({ children, tone = "keylime" }: { children: React.ReactNode; tone?: string }) {
+  const tones: Record<string, string> = {
+    keylime: "bg-keylime text-ink",
+    sage: "bg-sage text-ink",
+    rose: "bg-rose-soft text-rose",
+    ink: "bg-ink text-cream",
+    cream: "bg-cream text-ink",
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${tones[tone] || tones.keylime}`}>
+      {children}
+    </span>
+  );
+}
+
+/* Kikin：圆形装饰徽章（enamel-pin 感），带旋转 */
+export function PatchBadge({ emoji, size = 72, rotate = -8 }: { emoji: string; size?: number; rotate?: number }) {
+  return (
+    <span
+      className="patch-badge"
+      style={{ width: size, height: size, fontSize: size * 0.5, transform: `rotate(${rotate}deg)` }}
+      aria-hidden
+    >
+      {emoji}
+    </span>
   );
 }

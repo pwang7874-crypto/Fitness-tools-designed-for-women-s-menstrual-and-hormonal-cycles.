@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN" className={`${oswald.variable} ${inter.variable}`}>
       <body className="min-h-screen">
         <Nav />
-        <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-6">{children}</main>
+        <main className="pb-24">{children}</main>
       </body>
     </html>
   );
