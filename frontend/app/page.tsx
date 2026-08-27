@@ -2,7 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { MOODS, MOOD_EMOJI, RED_FLAGS, MUSCLE_ZH } from "@/lib/constants";
+import {
+  MOODS, MOOD_EMOJI, RED_FLAGS, MUSCLE_ZH, EQUIPMENT,
+  ENERGY_OPTIONS, SLEEP_OPTIONS, SORENESS_OPTIONS,
+} from "@/lib/constants";
 import { videoUrl } from "@/lib/utils";
 import {
   Card, Field, PillButton, ChipGroup, inputCls, ErrorBanner, HeroTitle, Tag, LeafIcon,
@@ -19,9 +22,10 @@ export default function Today() {
   const [ready, setReady] = useState(false);
 
   const [diary, setDiary] = useState("");
-  const [energy, setEnergy] = useState(3);
-  const [sleep, setSleep] = useState(7);
-  const [soreness, setSoreness] = useState(0);
+  const [energy, setEnergy] = useState("3");
+  const [sleep, setSleep] = useState("7");
+  const [soreness, setSoreness] = useState("0");
+  const [equipment, setEquipment] = useState<string[]>([]);
   const [pain, setPain] = useState("none");
   const [minutes, setMinutes] = useState(40);
   const [flags, setFlags] = useState<string[]>([]);
@@ -43,7 +47,7 @@ export default function Today() {
     if (!id) { setReady(true); return; }
     // 校验 profile 是否仍存在（避免“资源不存在”）
     api.profile(+id)
-      .then(() => setProfileId(+id))
+      .then((p) => { setProfileId(+id); setEquipment(p.equipment || []); })
       .catch(() => { localStorage.removeItem("profile_id"); setProfileId(null); })
       .finally(() => setReady(true));
   }, []);
@@ -71,7 +75,7 @@ export default function Today() {
     try {
       const r = await api.checkin({
         profile_id: profileId, available_minutes: +minutes, energy: +energy,
-        sleep_hours: +sleep, soreness: +soreness, pain, diary, red_flags: flags,
+        sleep_hours: +sleep, soreness: +soreness, pain, diary, equipment, red_flags: flags,
       });
       setResult(r);
     } catch (e: any) {
@@ -137,26 +141,29 @@ export default function Today() {
         {/* 身体状态 */}
         <Card>
           <h2 className="font-display text-lg text-ink">身体状态</h2>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <Field label="主观能量（1–5）">
-              <input className={inputCls()} type="number" min={1} max={5} value={energy} onChange={(e) => setEnergy(+e.target.value)} />
+          <div className="mt-3 space-y-4">
+            <Field label="今天感觉怎么样？">
+              <ChipGroup options={ENERGY_OPTIONS} value={[energy]} onChange={(v) => setEnergy(v[0] || "3")} single />
             </Field>
-            <Field label="睡眠（小时）">
-              <input className={inputCls()} type="number" step={0.5} min={0} max={24} value={sleep} onChange={(e) => setSleep(+e.target.value)} />
+            <Field label="昨晚睡得如何？">
+              <ChipGroup options={SLEEP_OPTIONS} value={[sleep]} onChange={(v) => setSleep(v[0] || "7")} single />
             </Field>
-            <Field label="训练酸痛（0–5）">
-              <input className={inputCls()} type="number" min={0} max={5} value={soreness} onChange={(e) => setSoreness(+e.target.value)} />
+            <Field label="肌肉酸痛吗？">
+              <ChipGroup options={SORENESS_OPTIONS} value={[soreness]} onChange={(v) => setSoreness(v[0] || "0")} single />
             </Field>
-            <Field label="疼痛 / 不适">
-              <select className={inputCls()} value={pain} onChange={(e) => setPain(e.target.value)}>
-                <option value="none">无</option><option value="mild">轻微</option><option value="moderate">中等</option>
-              </select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="疼痛 / 不适">
+                <select className={inputCls()} value={pain} onChange={(e) => setPain(e.target.value)}>
+                  <option value="none">无</option><option value="mild">轻微</option><option value="moderate">中等</option>
+                </select>
+              </Field>
+              <Field label="可用时间（分钟）">
+                <input className={inputCls()} type="number" min={10} max={180} value={minutes} onChange={(e) => setMinutes(+e.target.value)} />
+              </Field>
+            </div>
+            <Field label="今天能用什么器械？（不选 = 徒手）">
+              <ChipGroup options={EQUIPMENT} value={equipment} onChange={setEquipment} />
             </Field>
-            <Field label="可用时间（分钟）">
-              <input className={inputCls()} type="number" min={10} max={180} value={minutes} onChange={(e) => setMinutes(+e.target.value)} />
-            </Field>
-          </div>
-          <div className="mt-4">
             <Field label="红旗症状（如有，系统会停止并建议就医）">
               <ChipGroup options={RED_FLAGS} value={flags} onChange={setFlags} />
             </Field>
@@ -233,7 +240,7 @@ export default function Today() {
                                 {MUSCLE_ZH[m] || m}
                               </span>
                             ))}
-                            <a href={videoUrl(e.name_en)} target="_blank" rel="noreferrer"
+                            <a href={videoUrl(e.name_zh)} target="_blank" rel="noreferrer"
                                className="ghost-link text-xs font-medium text-rose">
                               ▶ 教学视频
                             </a>

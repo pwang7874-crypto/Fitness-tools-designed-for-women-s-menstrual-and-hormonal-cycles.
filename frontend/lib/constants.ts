@@ -54,6 +54,28 @@ export const CYCLE_MODES = [
   { value: "unknown", label: "不愿填写" },
 ];
 
+// 身体状态：用可点选的标签量化，而不是输入抽象数字
+export const ENERGY_OPTIONS = [
+  { value: "1", label: "很累", emoji: "😫" },
+  { value: "2", label: "有点累", emoji: "😕" },
+  { value: "3", label: "一般", emoji: "😐" },
+  { value: "4", label: "不错", emoji: "🙂" },
+  { value: "5", label: "精力充沛", emoji: "⚡" },
+];
+
+export const SLEEP_OPTIONS = [
+  { value: "5", label: "没睡好 · <6h", emoji: "😴" },
+  { value: "7", label: "一般 · 6–8h", emoji: "🙂" },
+  { value: "8.5", label: "睡得好 · >8h", emoji: "😄" },
+];
+
+export const SORENESS_OPTIONS = [
+  { value: "0", label: "不酸", emoji: "🟢" },
+  { value: "1", label: "轻微", emoji: "🟡" },
+  { value: "3", label: "明显", emoji: "🟠" },
+  { value: "5", label: "很酸", emoji: "🔴" },
+];
+
 export const MUSCLE_ZH: Record<string, string> = {
   quads: "股四头肌", glutes: "臀大肌", hamstrings: "腘绳肌", calves: "小腿",
   chest: "胸大肌", triceps: "肱三头肌", shoulders: "肩部", lats: "背阔肌",

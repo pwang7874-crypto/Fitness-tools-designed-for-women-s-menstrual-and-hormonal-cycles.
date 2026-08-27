@@ -26,6 +26,7 @@ class CheckInIn(BaseModel):
     soreness: int = Field(ge=0, le=5, default=0)
     pain: Pain = "none"
     diary: Optional[str] = None          # 日记：由 AI 判断心情，不再手动选心情
+    equipment: Optional[list[str]] = None  # 今天可用的器械（可选覆盖档案默认）
     red_flags: list[str] = Field(default_factory=list)
     notes: Optional[str] = None
 

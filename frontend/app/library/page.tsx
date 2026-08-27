@@ -48,7 +48,7 @@ export default function Library() {
               </div>
             </div>
             <a
-              href={videoUrl(e.name_en)}
+              href={videoUrl(e.name_zh)}
               target="_blank"
               rel="noreferrer"
               className="ghost-link shrink-0 text-sm font-medium text-rose"

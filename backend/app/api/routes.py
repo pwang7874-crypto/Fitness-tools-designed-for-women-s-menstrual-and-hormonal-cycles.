@@ -91,7 +91,8 @@ def checkin(payload: CheckInIn, db: Session = Depends(get_db)):
 
     profile_dict = {
         "goal": profile.goal, "experience_level": profile.experience_level,
-        "equipment": profile.equipment, "injured_areas": profile.injured_areas,
+        "equipment": payload.equipment if payload.equipment is not None else profile.equipment,
+        "injured_areas": profile.injured_areas,
     }
     checkin_dict = payload.model_dump()
     checkin_dict["mood"] = mood_result["mood"]
