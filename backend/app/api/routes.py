@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from ..core.db import get_db
 from .. import models
-from ..schemas import CheckInIn, FeedbackIn, OnboardingIn
-from ..services import comfort, llm, mood, plan_engine, readiness, safety, validator
+from ..schemas import CheckInIn, FeedbackIn, OnboardingIn, PeriodIn
+from ..services import comfort, cycle, llm, mood, plan_engine, readiness, safety, validator
 
 router = APIRouter(prefix="/api/v1")
 
@@ -74,6 +74,7 @@ def checkin(payload: CheckInIn, db: Session = Depends(get_db)):
         pain=payload.pain,
         diary=payload.diary or "",
         mood=mood_result["mood"],
+        tag=mood_result["tag"],
         red_flags=payload.red_flags,
     )
     db.add(checkin_row)
@@ -224,6 +225,40 @@ def delete_profile(profile_id: int, db: Session = Depends(get_db)):
     db.delete(profile)
     db.commit()
     return {"status": "deleted"}
+
+
+@router.post("/periods")
+def add_period(payload: PeriodIn, db: Session = Depends(get_db)):
+    """记录一次经期开始/结束日期（导入经期数据，用于周期预测）。"""
+    from datetime import date as d, datetime as dt
+    profile = db.get(models.UserProfile, payload.profile_id)
+    if not profile:
+        raise HTTPException(404, "profile not found")
+    start = dt.strptime(payload.start_date, "%Y-%m-%d").date()
+    end = dt.strptime(payload.end_date, "%Y-%m-%d").date() if payload.end_date else None
+    rec = models.PeriodRecord(profile_id=payload.profile_id, start_date=start, end_date=end)
+    db.add(rec)
+    db.commit()
+    return {"status": "ok", "id": rec.id}
+
+
+@router.get("/cycle/{profile_id}")
+def get_cycle(profile_id: int, db: Session = Depends(get_db)):
+    """周期与激素预测（日历推算，非医学诊断）。"""
+    recs = db.query(models.PeriodRecord).filter_by(profile_id=profile_id).order_by(
+        models.PeriodRecord.start_date.asc()).all()
+    return cycle.predict(recs)
+
+
+@router.get("/diaries/{profile_id}")
+def get_diaries(profile_id: int, db: Session = Depends(get_db)):
+    """日记历史：列出每天写下的日记与其心情标签。"""
+    rows = db.query(models.DailyCheckIn).filter(
+        models.DailyCheckIn.profile_id == profile_id,
+        models.DailyCheckIn.diary != "",
+    ).order_by(models.DailyCheckIn.created_at.desc()).all()
+    return [{"id": r.id, "day": r.day.isoformat(), "diary": r.diary,
+             "mood": r.mood, "tag": r.tag, "created_at": r.created_at.isoformat()} for r in rows]
 
 
 @router.post("/feedback")

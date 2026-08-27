@@ -35,6 +35,7 @@ class DailyCheckIn(Base):
     pain: Mapped[str] = mapped_column(String(16))         # none / mild / moderate
     diary: Mapped[str] = mapped_column(Text, default="")  # 日记原文（敏感，不写日志）
     mood: Mapped[str] = mapped_column(String(16))         # 由日记分析得出（very_bad / low / ok / good / great）
+    tag: Mapped[str] = mapped_column(String(16), default="")  # 情绪标签（疲惫/低落/平静…）
     red_flags: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -82,6 +83,16 @@ class WorkoutSession(Base):
     mood_after: Mapped[str] = mapped_column(String(16), default="ok")
     satisfaction: Mapped[int] = mapped_column(Integer, default=3)  # 1-5
     stop_reason: Mapped[str] = mapped_column(String(32), default="completed")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class PeriodRecord(Base):
+    __tablename__ = "period_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    profile_id: Mapped[int] = mapped_column(Integer)
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

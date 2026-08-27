@@ -30,6 +30,12 @@ class CheckInIn(BaseModel):
     notes: Optional[str] = None
 
 
+class PeriodIn(BaseModel):
+    profile_id: int
+    start_date: str          # YYYY-MM-DD
+    end_date: Optional[str] = None
+
+
 class FeedbackIn(BaseModel):
     plan_id: int
     completion: float = Field(ge=0, le=1, default=1.0)

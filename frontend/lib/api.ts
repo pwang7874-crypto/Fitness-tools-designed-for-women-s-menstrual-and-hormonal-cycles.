@@ -53,6 +53,10 @@ export const api = {
   feedback: (body: Record<string, unknown>) =>
     request<any>("/api/v1/feedback", { method: "POST", body: JSON.stringify(body) }),
   insights: (profileId: number) => request<any>(`/api/v1/insights/${profileId}`),
+  diaries: (profileId: number) => request<any[]>(`/api/v1/diaries/${profileId}`),
+  cycle: (profileId: number) => request<any>(`/api/v1/cycle/${profileId}`),
+  addPeriod: (body: Record<string, unknown>) =>
+    request<any>("/api/v1/periods", { method: "POST", body: JSON.stringify(body) }),
   export: (profileId: number) => request<any>(`/api/v1/export/${profileId}`),
   deleteProfile: (profileId: number) =>
     request<any>(`/api/v1/profile/${profileId}`, { method: "DELETE" }),

@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 
 const links = [
   { href: "/", label: "今日" },
+  { href: "/diary", label: "日记" },
+  { href: "/cycle", label: "周期" },
   { href: "/library", label: "动作库" },
   { href: "/insights", label: "洞察" },
   { href: "/profile", label: "我的" },

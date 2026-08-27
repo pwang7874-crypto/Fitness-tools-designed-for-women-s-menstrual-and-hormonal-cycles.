@@ -1,6 +1,19 @@
 # -*- coding: utf-8 -*-
 """第一层 mock 测试：业务逻辑（安全 / 准备度 / 安慰 / 计划 / 验证）。"""
-from app.services import comfort, mood, plan_engine, readiness, safety, validator
+from app.services import comfort, cycle, mood, plan_engine, readiness, safety, validator
+
+
+def test_cycle_predict():
+    from datetime import date, timedelta
+    class R:
+        def __init__(self, d): self.start_date = d
+    today = date.today()
+    recs = [R(today - timedelta(days=56)), R(today - timedelta(days=28)), R(today)]
+    p = cycle.predict(recs)
+    assert p["avg_cycle"] == 28
+    assert p["cycle_day"] == 1
+    assert p["phase"]["key"] == "menstrual"
+    assert p["next_period"] == (today + timedelta(days=28)).isoformat()
 
 
 def test_mood_keyword_fallback():
