@@ -5,14 +5,19 @@ import { api } from "@/lib/api";
 import { MOODS, MOOD_EMOJI, RED_FLAGS, MUSCLE_ZH } from "@/lib/constants";
 import { videoUrl } from "@/lib/utils";
 import {
-  Card, Field, PillButton, ChipGroup, inputCls, ErrorBanner, HeroTitle, Tag, PatchBadge,
+  Card, Field, PillButton, ChipGroup, inputCls, ErrorBanner, HeroTitle, Tag, LeafIcon,
 } from "@/components/ui";
+
+function todayStr() {
+  const d = new Date();
+  const w = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${w}`;
+}
 
 export default function Today() {
   const [profileId, setProfileId] = useState<number | null>(null);
   const [ready, setReady] = useState(false);
 
-  // check-in 表单（无手动心情，由日记分析得出）
   const [diary, setDiary] = useState("");
   const [energy, setEnergy] = useState(3);
   const [sleep, setSleep] = useState(7);
@@ -25,7 +30,6 @@ export default function Today() {
   const [err, setErr] = useState("");
   const [result, setResult] = useState<any>(null);
 
-  // 反馈
   const [completion, setCompletion] = useState(1);
   const [rpe, setRpe] = useState("");
   const [painAfter, setPainAfter] = useState("none");
@@ -36,18 +40,23 @@ export default function Today() {
 
   useEffect(() => {
     const id = localStorage.getItem("profile_id");
-    if (id) setProfileId(+id);
-    setReady(true);
+    if (!id) { setReady(true); return; }
+    // 校验 profile 是否仍存在（避免“资源不存在”）
+    api.profile(+id)
+      .then(() => setProfileId(+id))
+      .catch(() => { localStorage.removeItem("profile_id"); setProfileId(null); })
+      .finally(() => setReady(true));
   }, []);
 
   if (!ready) return null;
 
   if (!profileId) {
     return (
-      <div className="mx-auto max-w-3xl px-4 pt-16 text-center">
-        <h1 className="font-display text-4xl font-bold text-ink">欢迎使用 CycleFit</h1>
-        <p className="mt-2 text-sm text-moss">先建立你的档案，我会据此生成适合你的训练计划。</p>
-        <Link href="/onboarding" className="mt-6 inline-block rounded-full bg-meadow px-8 py-3 text-sm font-medium text-ink">
+      <div className="mx-auto max-w-3xl px-4 pt-20 text-center">
+        <LeafIcon className="mx-auto h-16 w-16" />
+        <h1 className="font-display mt-4 text-3xl text-ink">欢迎来到 CycleFit</h1>
+        <p className="mt-2 text-sm text-moss">先建立你的档案，我才能给适合你的计划。</p>
+        <Link href="/onboarding" className="mt-6 inline-block rounded-full bg-ink px-8 py-3 text-sm font-medium text-cream shadow-[var(--shadow-chip)]">
           开始建档
         </Link>
       </div>
@@ -90,40 +99,45 @@ export default function Today() {
   };
 
   return (
-    <div>
-      {/* Hero：森林墨 + 超大展示标题 + 圆形徽章（Kikin） */}
-      <section className="bg-ink text-cream">
-        <div className="mx-auto flex max-w-3xl items-start justify-between px-4 py-10">
+    <div className="animate-rise">
+      {/* 浅色 hero：果绿洗 + 衬线大标题 */}
+      <section className="bg-keylime/70">
+        <div className="mx-auto flex max-w-3xl items-end justify-between px-4 py-8">
           <div>
             <HeroTitle eyebrow="Daily · 今日" lines={[{ text: "今天，听" }, { text: "身体的", accent: true }]} />
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-cream/70">
-              写几句日记，AI 会读懂你的心情，给出今天的训练，和一句温柔的提醒。
+            <p className="mt-2 max-w-sm text-sm text-ink/70">
+              写几句日记，AI 会读懂你的心情，给你今天的训练和一句提醒。
             </p>
           </div>
-          <div className="flex shrink-0 gap-3 pt-1">
-            <PatchBadge emoji="🌿" rotate={-8} />
-            <PatchBadge emoji="🌸" rotate={6} />
-            <PatchBadge emoji="🌙" rotate={-4} />
-          </div>
+          <LeafIcon className="h-16 w-16 shrink-0 opacity-80" />
         </div>
       </section>
 
-      {/* 内容：卡片轻微叠压在 hero 上 */}
-      <div className="mx-auto -mt-6 max-w-3xl space-y-4 px-4">
-        <Card className="poster-card relative z-10 border-sage-border">
+      <div className="mx-auto max-w-3xl space-y-4 px-4">
+        {/* 日记：今日页专门的独立板块 */}
+        <Card className="mt-4 border-sage">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-2xl font-bold text-ink">写写今天</h2>
-            <Tag tone="sage">AI 心情识别</Tag>
+            <div className="flex items-center gap-2">
+              <h2 className="font-display text-xl text-ink">今日日记</h2>
+              <Tag tone="sage">AI 心情识别</Tag>
+            </div>
+            <span className="text-xs text-moss">{todayStr()}</span>
           </div>
           <textarea
-            className="mt-3 min-h-28 w-full resize-none rounded-2xl border border-frost bg-white px-4 py-3 text-sm leading-relaxed outline-none focus:border-meadow"
-            placeholder="今天发生了什么？心情怎么样？写几句就好，比如“今天有点累，工作好多，不太想动”…"
+            className="mt-3 min-h-32 w-full resize-none rounded-2xl border border-frost bg-cream px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-meadow"
+            placeholder="今天发生了什么？心情怎么样？写几句就好。比如：“今天有点累，工作好多，不太想动，但想动一动可能会好一点。”"
             value={diary}
             onChange={(e) => setDiary(e.target.value)}
           />
-          <p className="mt-1 text-xs text-moss">AI 会通过日记读懂你的心情，并给一句小标签提醒；心情不好时会温柔地建议少练一点。</p>
+          <p className="mt-2 text-xs text-moss">
+            写下的日记只会被用来读懂你今天的心情——心情不好时，会给你一句温柔提醒，并建议少练一点。
+          </p>
+        </Card>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {/* 身体状态 */}
+        <Card>
+          <h2 className="font-display text-lg text-ink">身体状态</h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Field label="主观能量（1–5）">
               <input className={inputCls()} type="number" min={1} max={5} value={energy} onChange={(e) => setEnergy(+e.target.value)} />
             </Field>
@@ -142,24 +156,21 @@ export default function Today() {
               <input className={inputCls()} type="number" min={10} max={180} value={minutes} onChange={(e) => setMinutes(+e.target.value)} />
             </Field>
           </div>
-
           <div className="mt-4">
             <Field label="红旗症状（如有，系统会停止并建议就医）">
               <ChipGroup options={RED_FLAGS} value={flags} onChange={setFlags} />
             </Field>
           </div>
-
-          {err && <div className="mt-4"><ErrorBanner message={err} /></div>}
-          <div className="mt-5">
-            <PillButton onClick={submitCheckin} disabled={busy} className="w-full py-3 text-base">
-              {busy ? "正在读懂你的日记…" : "生成今日计划"}
-            </PillButton>
-          </div>
         </Card>
+
+        {err && <ErrorBanner message={err} />}
+        <PillButton onClick={submitCheckin} disabled={busy} className="w-full py-3 text-base">
+          {busy ? "正在读懂你的日记…" : "生成今日计划"}
+        </PillButton>
 
         {result?.status === "safety_stop" && (
           <Card tint="bg-danger/5">
-            <h2 className="font-display text-xl font-bold text-danger">安全提示</h2>
+            <h2 className="font-display text-xl text-danger">安全提示</h2>
             {result.red_flags.map((f: any) => (
               <p key={f.code} className="mt-2 text-sm text-danger">· {f.message}</p>
             ))}
@@ -168,9 +179,8 @@ export default function Today() {
 
         {result?.status === "ok" && (
           <>
-            {/* 心情标签 + 暖心安慰 */}
             {result.mood && (
-              <Card tint="bg-cream-2">
+              <Card>
                 <div className="flex items-center justify-between">
                   <span className="eyebrow text-moss">AI 读懂了你的心情</span>
                   <Tag tone="rose">{MOOD_EMOJI[result.mood.mood] || "😐"} {result.mood.tag}</Tag>
@@ -184,9 +194,9 @@ export default function Today() {
               </Card>
             )}
 
-            <Card tint="bg-keylime border-sage/50">
+            <Card tint="bg-keylime">
               <div className="flex items-baseline justify-between">
-                <h2 className="font-display text-xl font-bold text-ink">准备度</h2>
+                <h2 className="font-display text-lg text-ink">准备度</h2>
                 <span className="text-xs text-moss">置信度 {result.confidence}</span>
               </div>
               <p className="mt-1 text-sm">
@@ -195,14 +205,14 @@ export default function Today() {
             </Card>
 
             <Card>
-              <h2 className="font-display text-xl font-bold text-ink">为什么这样安排</h2>
-              <p className="mt-2 text-sm leading-relaxed">{result.rationale_text}</p>
+              <h2 className="font-display text-lg text-ink">为什么这样安排</h2>
+              <p className="mt-2 text-sm leading-relaxed text-charcoal">{result.rationale_text}</p>
             </Card>
 
             {result.plan.blocks.map((b: any, i: number) => (
               <Card key={i}>
                 <div className="flex items-baseline justify-between">
-                  <h3 className="font-display text-lg font-bold text-ink">
+                  <h3 className="font-display text-lg text-ink">
                     {b.title}
                     {b.duration_min ? <span className="ml-1 text-xs text-moss">约 {b.duration_min} 分钟</span> : null}
                   </h3>
@@ -213,7 +223,7 @@ export default function Today() {
                 {b.exercises?.length > 0 && (
                   <div className="mt-3 space-y-3">
                     {b.exercises.map((e: any, j: number) => (
-                      <div key={j} className="flex items-start justify-between gap-3 rounded-2xl border border-frost bg-white p-3">
+                      <div key={j} className="flex items-start justify-between gap-3 rounded-2xl border border-frost bg-cream p-3">
                         <div className="min-w-0">
                           <div className="font-medium text-ink">{e.name_zh}</div>
                           <div className="text-xs text-moss">{e.name_en}</div>
@@ -230,7 +240,7 @@ export default function Today() {
                           </div>
                         </div>
                         <div className="shrink-0 text-right text-sm">
-                          <div className="font-display text-lg font-bold text-ink">{e.sets}×{e.reps}</div>
+                          <div className="font-display text-lg text-ink">{e.sets}×{e.reps}</div>
                           <div className="text-xs text-moss">RPE {e.rpe} · 休 {e.rest_sec}s</div>
                         </div>
                       </div>
@@ -241,7 +251,7 @@ export default function Today() {
             ))}
 
             <Card>
-              <h2 className="font-display text-xl font-bold text-ink">训练反馈</h2>
+              <h2 className="font-display text-lg text-ink">训练反馈</h2>
               {fbDone ? (
                 <p className="mt-2 text-sm text-moss">已记录，谢谢你认真照顾自己 🌿</p>
               ) : (

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { MUSCLE_ZH } from "@/lib/constants";
 import { videoUrl } from "@/lib/utils";
-import { Card, Tag, HeroTitle, PatchBadge } from "@/components/ui";
+import { Card, Tag, HeroTitle, LeafIcon } from "@/components/ui";
 
 const CAT_ZH: Record<string, string> = {
   legs: "腿部", chest: "胸部", back: "背部", shoulders: "肩部", arms: "手臂", abs: "核心", calves: "小腿",
@@ -19,17 +19,17 @@ export default function Library() {
 
   return (
     <div>
-      <section className="bg-ink text-cream">
-        <div className="mx-auto flex max-w-3xl items-start justify-between px-4 py-8">
+      <section className="bg-keylime/70">
+        <div className="mx-auto flex max-w-3xl items-end justify-between px-4 py-8">
           <div>
             <HeroTitle eyebrow="Library · 动作库" lines={[{ text: "每个动作" }, { text: "都有教学", accent: true }]} />
-            <p className="mt-2 text-sm text-cream/70">21 个审核动作，含发力肌群与教学视频。</p>
+            <p className="mt-2 text-sm text-ink/70">21 个审核动作，含发力肌群与教学视频。</p>
           </div>
-          <PatchBadge emoji="🏔️" rotate={5} />
+          <LeafIcon className="h-16 w-16 shrink-0 opacity-80" />
         </div>
       </section>
 
-      <div className="mx-auto -mt-4 max-w-3xl space-y-3 px-4">
+      <div className="mx-auto max-w-3xl space-y-3 px-4">
         {err && <Card><p className="text-sm text-danger">{err}</p></Card>}
         {!exercises.length && !err && <Card><p className="text-sm text-moss">加载中…</p></Card>}
         {exercises.map((e) => (

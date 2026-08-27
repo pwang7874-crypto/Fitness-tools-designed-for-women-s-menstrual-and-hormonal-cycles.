@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { MOOD_EMOJI } from "@/lib/constants";
-import { Card, Tag, HeroTitle, PatchBadge } from "@/components/ui";
+import { Card, Tag, HeroTitle, LeafIcon } from "@/components/ui";
 
 export default function Insights() {
   const [profileId, setProfileId] = useState<number | null>(null);
@@ -31,17 +31,17 @@ export default function Insights() {
 
   return (
     <div>
-      <section className="bg-ink text-cream">
-        <div className="mx-auto flex max-w-3xl items-start justify-between px-4 py-8">
+      <section className="bg-keylime/70">
+        <div className="mx-auto flex max-w-3xl items-end justify-between px-4 py-8">
           <div>
             <HeroTitle eyebrow="Insights · 洞察" lines={[{ text: "看见自己的" }, { text: "节奏", accent: true }]} />
-            <p className="mt-2 text-sm text-cream/70">只陈述事实，不替你下结论。</p>
+            <p className="mt-2 text-sm text-ink/70">只陈述事实，不替你下结论。</p>
           </div>
-          <PatchBadge emoji="🌙" rotate={-5} />
+          <LeafIcon className="h-16 w-16 shrink-0 opacity-80" />
         </div>
       </section>
 
-      <div className="mx-auto -mt-4 max-w-3xl space-y-4 px-4">
+      <div className="mx-auto max-w-3xl space-y-4 px-4">
         {err && <Card><p className="text-sm text-danger">{err}</p></Card>}
         {!data && !err && <Card><p className="text-sm text-moss">加载中…</p></Card>}
 

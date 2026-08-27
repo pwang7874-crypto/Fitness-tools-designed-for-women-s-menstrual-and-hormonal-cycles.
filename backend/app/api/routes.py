@@ -161,6 +161,16 @@ def get_plan(plan_id: int, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/profile/{profile_id}")
+def get_profile(profile_id: int, db: Session = Depends(get_db)):
+    p = db.get(models.UserProfile, profile_id)
+    if not p:
+        raise HTTPException(404, "profile not found")
+    return {"profile_id": p.id, "goal": p.goal, "experience_level": p.experience_level,
+            "weekly_frequency": p.weekly_frequency, "session_minutes": p.session_minutes,
+            "equipment": p.equipment, "injured_areas": p.injured_areas, "cycle_mode": p.cycle_mode}
+
+
 @router.get("/insights/{profile_id}")
 def insights(profile_id: int, db: Session = Depends(get_db)):
     """周洞察（简化版）：训练次数、平均完成度、近期情绪趋势。只陈述事实，不输出因果。"""

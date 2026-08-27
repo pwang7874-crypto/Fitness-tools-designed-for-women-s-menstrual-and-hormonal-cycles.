@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { GOALS, EXPERIENCE, CYCLE_MODES, EQUIPMENT, INJURED } from "@/lib/constants";
-import { Card, PillButton, ErrorBanner, HeroTitle, PatchBadge } from "@/components/ui";
+import { Card, PillButton, ErrorBanner, HeroTitle, LeafIcon } from "@/components/ui";
 
 const labelOf = (list: { value: string; label: string }[], v: string) =>
   list.find((x) => x.value === v)?.label || v;
@@ -48,17 +48,17 @@ export default function Profile() {
 
   return (
     <div>
-      <section className="bg-ink text-cream">
-        <div className="mx-auto flex max-w-3xl items-start justify-between px-4 py-8">
+      <section className="bg-keylime/70">
+        <div className="mx-auto flex max-w-3xl items-end justify-between px-4 py-8">
           <div>
             <HeroTitle eyebrow="Profile · 我的" lines={[{ text: "你的数据" }, { text: "你掌控", accent: true }]} />
-            <p className="mt-2 text-sm text-cream/70">查看档案、导出或删除数据。</p>
+            <p className="mt-2 text-sm text-ink/70">查看档案、导出或删除数据。</p>
           </div>
-          <PatchBadge emoji="🌸" rotate={5} />
+          <LeafIcon className="h-16 w-16 shrink-0 opacity-80" />
         </div>
       </section>
 
-      <div className="mx-auto -mt-4 max-w-3xl space-y-4 px-4">
+      <div className="mx-auto max-w-3xl space-y-4 px-4">
       {err && <ErrorBanner message={err} />}
 
       <Card>

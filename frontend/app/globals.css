@@ -1,44 +1,38 @@
 @import "tailwindcss";
 
 /*
- * CycleFit AI 设计系统
- * 风格来源（直接套用）：
- *  - Kikin：森林绿 hero + 暖奶油画布 + 草地绿单一强调 + 超窄展示字 + 扁平海报感 + 圆形徽章
- *  - TWOMUCH：药丸控件 / 单一强调色 / 细线分隔 / 幽灵悬停 / 无阴影扁平
- *  - Ease Health：奶油上的植物温室，sage/keylime 浅色面板，柔和圆角
- *  - 情绪专属：玫瑰粉（rose）用于"日记心情 / 暖心安慰"
+ * CycleFit AI 设计系统（v2 · 暖色药房 / 植物温室风）
+ * 主参考：Ease Health（奶油上的植物温室）+ August Health（暖奶油药房+编辑衬线）
+ * 辅以：Kikin 的森林绿+草地绿强调、TWOMUCH 的药丸交互
+ * 原则：暖、软、精致；衬线大标题 + 无衬线正文；单一草地绿强调 + 玫瑰粉只给情绪。
  */
 @theme {
-  --color-ink: #122315;          /* 森林墨 */
-  --color-ink-soft: #1d3a24;     /* 深绿次级表面 */
-  --color-meadow: #55dd4a;       /* 草地绿：唯一主行动强调 */
-  --color-meadow-deep: #45c43a;
-  --color-lichen: #77e46e;       /* 幽灵/描边态 */
-  --color-cream: #f3ede4;        /* 暖奶油画布 */
-  --color-cream-2: #f8f3eb;
-  --color-keylime: #e1f4df;      /* 果绿洗 */
-  --color-sage: #b1dbb8;         /* 鼠尾草 */
-  --color-sage-border: #566053;  /* 鼠尾草边 */
-  --color-charcoal: #333333;     /* 正文 */
-  --color-moss: #999c91;         /* 辅助 */
-  --color-frost: #e5e7eb;        /* 细线 */
-  --color-rose: #e76f91;         /* 玫瑰：情绪/暖心 */
-  --color-rose-soft: #fbe4ec;
-  --color-river: #73d3eb;        /* 装饰：水/天 */
-  --color-sun: #ffed52;          /* 装饰：太阳 */
-  --color-navy: #0a071b;         /* 装饰：深底 */
+  --color-ink: #122315;        /* 森林绿：标题 / 主按钮 */
+  --color-ink-soft: #2c4632;
+  --color-meadow: #4ed341;     /* 草绿：唯一强调（眉标/标签/选中态） */
+  --color-lichen: #a8e6a0;
+  --color-cream: #faf7f0;      /* 象牙白画布 */
+  --color-cream-2: #f3ede4;    /* 奶油次表面 */
+  --color-keylime: #eaf6e4;    /* 果绿洗：hero/浅面板 */
+  --color-sage: #d5e8cf;       /* 鼠尾草 */
+  --color-sage-border: #c2d4bd;
+  --color-charcoal: #3a4038;   /* 正文 */
+  --color-moss: #8b9186;       /* 辅助文字 */
+  --color-frost: #eceae2;      /* 细线 */
+  --color-rose: #e76f91;       /* 玫瑰：情绪/暖心专属 */
+  --color-rose-soft: #fbe9ef;
   --color-danger: #c0392b;
 
-  --font-display: var(--font-oswald), "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --font-display: "Songti SC", "Noto Serif SC", "Source Han Serif SC", "STSong", var(--font-oswald), serif;
   --font-sans: var(--font-inter), "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
 
-  --radius-card: 20px;
+  --radius-card: 18px;
   --radius-btn: 9999px;
   --radius-chip: 9999px;
-  --radius-lg: 10px;
+  --radius-lg: 12px;
 
-  --shadow-card: 0 12px 40px rgba(10, 7, 27, 0.10);
-  --shadow-chip: 0 8px 24px rgba(10, 7, 27, 0.16);
+  --shadow-card: 0 1px 2px rgba(18, 35, 21, 0.04), 0 8px 24px rgba(18, 35, 21, 0.06);
+  --shadow-chip: 0 6px 18px rgba(18, 35, 21, 0.12);
 }
 
 html, body {
@@ -47,46 +41,36 @@ html, body {
   font-family: var(--font-sans);
 }
 
+/* 衬线大标题（编辑感） */
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
-/* Kikin：eyebrow 小字眉标（大写 + 宽字距） */
+/* 眉标：大写 + 宽字距 */
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   font-size: 12px;
+  font-weight: 600;
 }
 
-/* Kikin：圆形徽章（enamel-pin 感），轻微旋转 + 奶油描边环 */
-.patch-badge {
-  border-radius: 9999px;
-  border: 2px solid rgba(243, 237, 228, 0.9);
-  background: var(--color-navy);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none;
-}
-
-/* TWOMUCH：幽灵链接悬停草地绿药丸 */
+/* TWOMUCH：幽灵链接悬停草绿药丸 */
 .ghost-link {
   padding: 4px 10px;
   border-radius: 9999px;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
 }
-.ghost-link:hover {
-  background: var(--color-meadow);
-  color: var(--color-ink);
+.ghost-link:hover { background: var(--color-keylime); color: var(--color-ink); }
+
+/* 柔和入场 */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+.animate-rise { animation: rise 0.35s ease both; }
 
 .hairline { border-color: var(--color-frost); }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* 海报质感：奶油底 + 极淡的纸纹（无渐变，仅明暗） */
-.poster-card {
-  background: var(--color-cream-2);
-  border: 1px solid var(--color-sage-border);
-}

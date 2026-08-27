@@ -10,7 +10,7 @@ export function Card({
   tint?: string;
 }) {
   return (
-    <div className={`rounded-[var(--radius-card)] border border-frost bg-cream-2 p-5 shadow-[var(--shadow-card)] ${tint} ${className}`}>
+    <div className={`rounded-[var(--radius-card)] border border-frost bg-white p-5 shadow-[var(--shadow-card)] ${tint} ${className}`}>
       {children}
     </div>
   );
@@ -25,16 +25,18 @@ export function PillButton({
 }: {
   children: React.ReactNode;
   onClick?: () => void;
-  variant?: "primary" | "ghost" | "danger";
+  variant?: "primary" | "ghost" | "danger" | "soft";
   disabled?: boolean;
   className?: string;
 }) {
   const styles =
     variant === "primary"
-      ? "bg-meadow text-ink hover:bg-meadow-deep"
+      ? "bg-ink text-cream hover:bg-ink-soft shadow-[var(--shadow-chip)]"
       : variant === "danger"
         ? "bg-danger text-white hover:opacity-90"
-        : "border border-ink/30 text-ink hover:bg-keylime";
+        : variant === "soft"
+          ? "bg-keylime text-ink hover:bg-sage"
+          : "border border-sage-border bg-white text-ink hover:bg-keylime";
   return (
     <button
       onClick={onClick}
@@ -56,7 +58,7 @@ export function Field({ label, children }: { label: string; children: React.Reac
 }
 
 export function inputCls() {
-  return "w-full rounded-[var(--radius-lg)] border border-frost bg-white px-3 py-2 text-sm outline-none focus:border-meadow";
+  return "w-full rounded-[var(--radius-lg)] border border-frost bg-white px-3 py-2 text-sm outline-none transition focus:border-meadow";
 }
 
 export function ChipGroup({
@@ -106,22 +108,24 @@ export function ErrorBanner({ message }: { message: string }) {
   );
 }
 
-/* Kikin：eyebrow 眉标 + 超大展示标题 */
+/* 衬线大标题 + 眉标 */
 export function HeroTitle({
   eyebrow,
   lines,
+  light = false,
 }: {
   eyebrow?: string;
   lines: { text: string; accent?: boolean }[];
+  light?: boolean;
 }) {
   return (
     <div>
-      {eyebrow && <div className="eyebrow text-meadow">{eyebrow}</div>}
-      <h1 className="font-display font-bold leading-[0.9] tracking-tight text-cream" style={{ fontSize: 48 }}>
+      {eyebrow && <div className={`eyebrow ${light ? "text-meadow" : "text-meadow"}`}>{eyebrow}</div>}
+      <h1 className="font-display leading-[1.15]" style={{ fontSize: 34 }}>
         {lines.map((l, i) => (
-          <span key={i} className={l.accent ? "text-meadow" : ""}>
+          <span key={i} className={l.accent ? "text-meadow" : light ? "text-ink" : "text-ink"}>
             {l.text}
-            {i < lines.length - 1 ? <br /> : null}
+            {i < lines.length - 1 ? " " : null}
           </span>
         ))}
       </h1>
@@ -136,7 +140,6 @@ export function Tag({ children, tone = "keylime" }: { children: React.ReactNode;
     sage: "bg-sage text-ink",
     rose: "bg-rose-soft text-rose",
     ink: "bg-ink text-cream",
-    cream: "bg-cream text-ink",
   };
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${tones[tone] || tones.keylime}`}>
@@ -145,15 +148,14 @@ export function Tag({ children, tone = "keylime" }: { children: React.ReactNode;
   );
 }
 
-/* Kikin：圆形装饰徽章（enamel-pin 感），带旋转 */
-export function PatchBadge({ emoji, size = 72, rotate = -8 }: { emoji: string; size?: number; rotate?: number }) {
+/* 植物线条装饰（替代 emoji 圆片） */
+export function LeafIcon({ className = "" }: { className?: string }) {
   return (
-    <span
-      className="patch-badge"
-      style={{ width: size, height: size, fontSize: size * 0.5, transform: `rotate(${rotate}deg)` }}
-      aria-hidden
-    >
-      {emoji}
-    </span>
+    <svg viewBox="0 0 64 64" fill="none" className={className} aria-hidden>
+      <path d="M32 8C20 20 16 34 20 46c1.5 4.5 5 7 8 8 8 2.5 18-2 22-10 4-9 1-24-18-36Z"
+        stroke="#122315" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M32 8c-2 10 2 18 8 24" stroke="#55dd4a" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M20 54c4-6 8-8 12-9" stroke="#e76f91" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }

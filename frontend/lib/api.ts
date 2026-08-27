@@ -48,6 +48,7 @@ export const api = {
   checkin: (body: Record<string, unknown>) =>
     request<any>("/api/v1/checkin", { method: "POST", body: JSON.stringify(body) }),
   exercises: () => request<any[]>("/api/v1/exercises"),
+  profile: (id: number) => request<any>(`/api/v1/profile/${id}`),
   plan: (id: number) => request<any>(`/api/v1/plan/${id}`),
   feedback: (body: Record<string, unknown>) =>
     request<any>("/api/v1/feedback", { method: "POST", body: JSON.stringify(body) }),
