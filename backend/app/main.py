@@ -24,7 +24,10 @@ app = FastAPI(title="CycleFit AI", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # MVP 开发期；上线前收紧
+    allow_origins=[
+        "http://localhost:3000", "http://localhost:3001",
+        "http://127.0.0.1:3000", "http://127.0.0.1:3001",
+    ],  # 仅本地开发前端；上线前按部署域名收紧
     allow_methods=["*"],
     allow_headers=["*"],
 )

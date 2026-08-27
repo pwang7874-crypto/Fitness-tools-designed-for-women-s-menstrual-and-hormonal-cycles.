@@ -10,7 +10,7 @@ import json
 import re
 from pathlib import Path
 
-from . import comfort, llm, plan_engine
+from . import comfort, guard, llm, plan_engine
 
 PROMPT_DIR = Path(__file__).resolve().parents[0] / "prompts"
 
@@ -45,6 +45,12 @@ def _plan_summary(plan: dict) -> str:
 
 def chat(profile: dict, checkin: dict, plan: dict, cycle_phase: str | None,
          message: str) -> dict:
+    # 1) 系统防护：注入/违规/超长拦截（确定性，先于模型）
+    blocked = guard.check(message)
+    if blocked:
+        return {"reply": blocked, "change": None}
+
+    # 2) 医疗/药物/避孕等话题拒答
     if any(k in message for k in REFUSE_TOPICS):
         return {"reply": "这个话题我帮不上忙，建议你咨询专业医生或医疗机构。我可以继续帮你调整今天的训练计划。",
                 "change": None}

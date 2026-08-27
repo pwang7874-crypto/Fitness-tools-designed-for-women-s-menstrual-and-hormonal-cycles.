@@ -40,7 +40,7 @@ class PeriodIn(BaseModel):
 class ChatIn(BaseModel):
     profile_id: int
     plan_id: int
-    message: str
+    message: str = Field(..., min_length=1, max_length=500)
 
 
 class ChatApplyIn(BaseModel):
