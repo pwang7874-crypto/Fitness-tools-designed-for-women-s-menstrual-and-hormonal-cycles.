@@ -38,6 +38,25 @@ cp .env.example .env            # 填入 DEEPSEEK_API_KEY
 
 打开 http://127.0.0.1:8000/ 使用临时验收界面（建档 → Check-in → 看计划 → 反馈）。
 
+## 前端（第二阶段，正式前端）
+
+```bash
+cd frontend
+npm install
+npm run dev        # 默认 http://localhost:3000（端口被占会自动换端口）
+```
+
+前端通过 `rewrites` 把 `/api/*` 同源代理到后端（`BACKEND_URL` 环境变量，默认 `http://127.0.0.1:8000`），需先启动后端。
+
+页面：`/`（今日：Check-in→计划+暖心安慰→反馈）、`/onboarding`（建档）、`/insights`（洞察）、`/profile`（数据导出/删除）。
+
+```bash
+npm run typecheck   # 类型检查
+npm run build       # 生产构建（standalone）
+```
+
+设计系统：整体风格借鉴 Kikin（森林绿+暖奶油+草绿强调+超窄展示字），交互模式借鉴 TWOMUCH（药丸控件/单一强调色/细线分隔），温暖适配 Ease Health（奶油上的植物温室）。详见 `frontend/app/globals.css` 的 `@theme` tokens。
+
 ## 运行测试
 
 ```bash

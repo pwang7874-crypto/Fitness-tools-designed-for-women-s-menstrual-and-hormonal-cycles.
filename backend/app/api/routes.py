@@ -154,6 +154,61 @@ def get_plan(plan_id: int, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/insights/{profile_id}")
+def insights(profile_id: int, db: Session = Depends(get_db)):
+    """周洞察（简化版）：训练次数、平均完成度、近期情绪趋势。只陈述事实，不输出因果。"""
+    from sqlalchemy import func, select
+    sessions = db.query(models.WorkoutSession).filter_by(profile_id=profile_id).all()
+    moods = db.query(models.MoodRecord).filter_by(profile_id=profile_id).order_by(
+        models.MoodRecord.created_at.desc()).limit(30).all()
+    return {
+        "session_count": len(sessions),
+        "avg_completion": round(sum(s.completion for s in sessions) / len(sessions), 2) if sessions else None,
+        "avg_rpe": round(sum(s.rpe for s in sessions if s.rpe) / len([s for s in sessions if s.rpe]), 1) if any(s.rpe for s in sessions) else None,
+        "mood_trend": [{"mood": m.mood, "at": m.created_at.isoformat()} for m in moods],
+    }
+
+
+@router.get("/export/{profile_id}")
+def export_data(profile_id: int, db: Session = Depends(get_db)):
+    """数据控制：导出该用户的全部数据（JSON），用于「查看/导出」。"""
+    profile = db.get(models.UserProfile, profile_id)
+    if not profile:
+        raise HTTPException(404, "profile not found")
+    checkins = db.query(models.DailyCheckIn).filter_by(profile_id=profile_id).all()
+    plans = db.query(models.TrainingPlan).filter_by(profile_id=profile_id).all()
+    sessions = db.query(models.WorkoutSession).filter_by(profile_id=profile_id).all()
+    moods = db.query(models.MoodRecord).filter_by(profile_id=profile_id).all()
+    def dump(obj, cols):
+        return [{c: getattr(o, c) for c in cols} for o in obj]
+    return {
+        "profile": dump([profile], ["id", "goal", "experience_level", "weekly_frequency",
+                                     "session_minutes", "equipment", "injured_areas", "cycle_mode"]),
+        "checkins": dump(checkins, ["id", "day", "available_minutes", "energy", "sleep_hours",
+                                     "soreness", "pain", "mood", "red_flags", "created_at"]),
+        "plans": dump(plans, ["id", "checkin_id", "version", "goal", "duration_min", "readiness_band",
+                               "mood", "confidence", "comfort_msg", "rationale", "blocks", "validation_status"]),
+        "sessions": dump(sessions, ["id", "plan_id", "completion", "rpe", "pain_after", "mood_after",
+                                     "satisfaction", "stop_reason", "created_at"]),
+        "moods": dump(moods, ["id", "mood", "source", "created_at"]),
+    }
+
+
+@router.delete("/profile/{profile_id}")
+def delete_profile(profile_id: int, db: Session = Depends(get_db)):
+    """数据控制：删除该用户全部数据（软删除由前端二次确认后调用）。"""
+    profile = db.get(models.UserProfile, profile_id)
+    if not profile:
+        raise HTTPException(404, "profile not found")
+    for model, fk in [(models.DailyCheckIn, "profile_id"), (models.MoodRecord, "profile_id"),
+                      (models.TrainingPlan, "profile_id"), (models.WorkoutSession, "profile_id"),
+                      (models.SafetyEvent, "profile_id")]:
+        db.query(model).filter(getattr(model, fk) == profile_id).delete()
+    db.delete(profile)
+    db.commit()
+    return {"status": "deleted"}
+
+
 @router.post("/feedback")
 def feedback(payload: FeedbackIn, db: Session = Depends(get_db)):
     plan = db.get(models.TrainingPlan, payload.plan_id)

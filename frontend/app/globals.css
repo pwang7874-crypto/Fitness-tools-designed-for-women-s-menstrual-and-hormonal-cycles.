@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/*
+ * CycleFit AI 设计系统
+ * 风格：Kikin（森林绿 + 暖奶油 + 草绿强调 + 超窄展示字 + 扁平海报感）
+ * 交互：TWOMUCH（药丸控件 / 单一强调色 / 细线分隔 / 幽灵悬停）
+ * 温暖适配：Ease Health（奶油上的植物温室，柔和不冰冷）
+ */
+@theme {
+  /* Colors */
+  --color-ink: #122315;          /* 森林墨：标题、主文本、深色表面 */
+  --color-meadow: #55dd4a;       /* 草地绿：唯一的主行动强调色 */
+  --color-meadow-deep: #45c43a;  /* hover */
+  --color-cream: #f3ede4;        /* 暖奶油：内容画布 */
+  --color-cream-2: #f8f3eb;      /* 次表面 */
+  --color-keylime: #e1f4df;      /* 果绿洗：浅色面板/高亮 */
+  --color-sage: #b1dbb8;         /* 鼠尾草：卡片表面 */
+  --color-sage-border: #566053;  /* 鼠尾草边：次要边框 */
+  --color-charcoal: #333333;     /* 正文 */
+  --color-moss: #999c91;         /* 辅助文字 */
+  --color-frost: #e5e7eb;        /* 细线分隔 */
+  --color-rose: #e76f91;         /* 玫瑰：情绪/暖心专属点缀 */
+  --color-rose-soft: #fbe4ec;    /* 暖心卡片底 */
+  --color-danger: #c0392b;       /* 红旗/删除 */
+
+  /* Fonts */
+  --font-display: var(--font-oswald), "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --font-sans: var(--font-inter), "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+
+  /* Radius */
+  --radius-card: 20px;
+  --radius-btn: 9999px;   /* 药丸 */
+  --radius-chip: 9999px;
+  --radius-lg: 10px;
+}
+
+html, body {
+  background: var(--color-cream);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* 幽灵链接：悬停出现草地绿药丸高亮（TWOMUCH 交互） */
+.ghost-link {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  transition: background 0.12s ease;
+}
+.ghost-link:hover {
+  background: var(--color-meadow);
+  color: var(--color-ink);
+}
+
+/* 细线分隔 */
+.hairline {
+  border-color: var(--color-frost);
+}
+
+/* 隐藏滚动条但仍可滚动（移动端横向 chip 组） */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
