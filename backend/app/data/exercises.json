@@ -1,4 +1,5 @@
 [
+  {"id":"bodyweight_squat","name_zh":"徒手深蹲","name_en":"Bodyweight Squat","category":"legs","primary_muscles":["quads","glutes"],"secondary_muscles":["hamstrings"],"equipment":["bodyweight"],"level":"beginner","home_friendly":true,"swap_group":"squat_pattern","difficulty":1},
   {"id":"barbell_squat","name_zh":"杠铃深蹲","name_en":"Barbell Squat","category":"legs","primary_muscles":["quads","glutes"],"secondary_muscles":["hamstrings"],"equipment":["barbell"],"level":"intermediate","home_friendly":false,"swap_group":"squat_pattern","difficulty":3},
   {"id":"goblet_squat","name_zh":"高脚杯深蹲","name_en":"Goblet Squat","category":"legs","primary_muscles":["quads","glutes"],"secondary_muscles":["hamstrings"],"equipment":["dumbbell","kettlebell"],"level":"beginner","home_friendly":true,"swap_group":"squat_pattern","difficulty":2},
   {"id":"romanian_deadlift","name_zh":"罗马尼亚硬拉","name_en":"Romanian Deadlift","category":"legs","primary_muscles":["hamstrings","glutes"],"secondary_muscles":[],"equipment":["barbell","dumbbell"],"level":"intermediate","home_friendly":true,"swap_group":"hinge_pattern","difficulty":3},

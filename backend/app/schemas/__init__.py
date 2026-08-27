@@ -37,6 +37,18 @@ class PeriodIn(BaseModel):
     end_date: Optional[str] = None
 
 
+class ChatIn(BaseModel):
+    profile_id: int
+    plan_id: int
+    message: str
+
+
+class ChatApplyIn(BaseModel):
+    profile_id: int
+    plan_id: int
+    change: dict
+
+
 class FeedbackIn(BaseModel):
     plan_id: int
     completion: float = Field(ge=0, le=1, default=1.0)

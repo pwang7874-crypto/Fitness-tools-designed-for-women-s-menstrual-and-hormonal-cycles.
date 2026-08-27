@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from ..core.db import get_db
 from .. import models
-from ..schemas import CheckInIn, FeedbackIn, OnboardingIn, PeriodIn
-from ..services import comfort, cycle, llm, mood, plan_engine, readiness, safety, validator
+from ..schemas import ChatApplyIn, ChatIn, CheckInIn, FeedbackIn, OnboardingIn, PeriodIn
+from ..services import coach, comfort, cycle, llm, mood, plan_engine, readiness, safety, validator
 
 router = APIRouter(prefix="/api/v1")
 
@@ -96,7 +96,14 @@ def checkin(payload: CheckInIn, db: Session = Depends(get_db)):
     }
     checkin_dict = payload.model_dump()
     checkin_dict["mood"] = mood_result["mood"]
-    plan = plan_engine.generate_plan(profile_dict, checkin_dict, readiness_result, comfort_result)
+
+    # 周期上下文（软建议，不单独决定训练）
+    period_recs = db.query(models.PeriodRecord).filter_by(profile_id=profile.id).order_by(
+        models.PeriodRecord.start_date.asc()).all()
+    cyc = cycle.predict(period_recs)
+    cycle_phase = cyc["phase"]["key"] if cyc.get("has_data") and cyc.get("phase") else None
+
+    plan = plan_engine.generate_plan(profile_dict, checkin_dict, readiness_result, comfort_result, cycle_phase)
 
     # 4) 计划验证器（不可绕过）
     result = validator.validate(plan, profile_dict)
@@ -161,6 +168,87 @@ def get_plan(plan_id: int, db: Session = Depends(get_db)):
         "rationale": plan.rationale, "blocks": plan.blocks,
         "validation_status": plan.validation_status,
     }
+
+
+def _chat_context(db: Session, profile_id: int, plan: models.TrainingPlan):
+    """重建 AI 对话所需的真实上下文（只基于真实数据）。"""
+    profile = db.get(models.UserProfile, profile_id)
+    checkin = db.get(models.DailyCheckIn, plan.checkin_id)
+    if not profile or not checkin:
+        raise HTTPException(404, "context not found")
+    profile_dict = {"goal": profile.goal, "experience_level": profile.experience_level,
+                    "equipment": profile.equipment, "injured_areas": profile.injured_areas}
+    checkin_dict = {"available_minutes": checkin.available_minutes, "energy": checkin.energy,
+                    "sleep_hours": checkin.sleep_hours, "soreness": checkin.soreness,
+                    "pain": checkin.pain, "mood": checkin.mood}
+    readiness_result = readiness.compute(checkin.energy, checkin.sleep_hours, checkin.soreness,
+                                         checkin.pain, checkin.mood)
+    recs = db.query(models.PeriodRecord).filter_by(profile_id=profile_id).order_by(
+        models.PeriodRecord.start_date.asc()).all()
+    cyc = cycle.predict(recs)
+    cycle_phase = cyc["phase"]["key"] if cyc.get("has_data") and cyc.get("phase") else None
+    plan_dict = {"goal": plan.goal, "duration_min": plan.duration_min,
+                 "readiness_band": plan.readiness_band, "readiness_label": readiness_result["label"],
+                 "mood": plan.mood, "confidence": plan.confidence,
+                 "comfort_msg": plan.comfort_msg, "rest_suggestion": plan.rest_suggestion,
+                 "rationale": plan.rationale, "blocks": plan.blocks}
+    return profile_dict, checkin_dict, readiness_result, cycle_phase, plan_dict
+
+
+@router.post("/chat")
+def chat(payload: ChatIn, db: Session = Depends(get_db)):
+    plan = db.get(models.TrainingPlan, payload.plan_id)
+    if not plan or plan.profile_id != payload.profile_id:
+        raise HTTPException(404, "plan not found")
+    profile_dict, checkin_dict, readiness_result, cycle_phase, plan_dict = \
+        _chat_context(db, payload.profile_id, plan)
+
+    r = coach.chat(profile_dict, checkin_dict, plan_dict, cycle_phase, payload.message)
+
+    preview = None
+    if r["change"]:
+        try:
+            new_plan = coach.apply_change(profile_dict, checkin_dict, readiness_result,
+                                          cycle_phase, plan_dict, r["change"])
+            val = validator.validate(new_plan, profile_dict)
+            if val["status"] == "revise":
+                r["change"] = None
+                r["reply"] += "（这个调整没能通过安全校验，换个方式试试）"
+            else:
+                preview = {"blocks": new_plan["blocks"], "duration_min": new_plan["duration_min"],
+                           "rationale": new_plan["rationale"]}
+        except ValueError:
+            r["change"] = None
+    return {"reply": r["reply"], "change": r["change"], "preview": preview}
+
+
+@router.post("/chat/apply")
+def chat_apply(payload: ChatApplyIn, db: Session = Depends(get_db)):
+    plan = db.get(models.TrainingPlan, payload.plan_id)
+    if not plan or plan.profile_id != payload.profile_id:
+        raise HTTPException(404, "plan not found")
+    profile_dict, checkin_dict, readiness_result, cycle_phase, plan_dict = \
+        _chat_context(db, payload.profile_id, plan)
+
+    new_plan = coach.apply_change(profile_dict, checkin_dict, readiness_result,
+                                  cycle_phase, plan_dict, payload.change)
+    val = validator.validate(new_plan, profile_dict)
+    if val["status"] == "revise":
+        raise HTTPException(400, "计划校验未通过，已回退")
+
+    row = models.TrainingPlan(
+        profile_id=payload.profile_id, checkin_id=plan.checkin_id, version=plan.version + 1,
+        goal=new_plan["goal"], duration_min=new_plan["duration_min"],
+        readiness_band=new_plan["readiness_band"], mood=new_plan["mood"],
+        confidence=new_plan["confidence"], comfort_msg=new_plan["comfort_msg"],
+        rest_suggestion=new_plan["rest_suggestion"], rationale=new_plan["rationale"],
+        blocks=new_plan["blocks"], validation_status="pass",
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return {"plan_id": row.id, "version": row.version, "duration_min": row.duration_min,
+            "blocks": row.blocks, "rationale": row.rationale}
 
 
 @router.get("/profile/{profile_id}")

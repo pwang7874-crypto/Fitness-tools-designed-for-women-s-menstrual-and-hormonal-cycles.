@@ -42,6 +42,12 @@ export default function Today() {
   const [fbBusy, setFbBusy] = useState(false);
   const [fbDone, setFbDone] = useState(false);
 
+  const [chatInput, setChatInput] = useState("");
+  const [chatMsgs, setChatMsgs] = useState<{ role: "u" | "a"; text: string }[]>([]);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatChange, setChatChange] = useState<any>(null);
+  const [chatPreview, setChatPreview] = useState<any>(null);
+
   useEffect(() => {
     const id = localStorage.getItem("profile_id");
     if (!id) { setReady(true); return; }
@@ -99,6 +105,46 @@ export default function Today() {
       setErr(e.userMessage || "反馈提交失败");
     } finally {
       setFbBusy(false);
+    }
+  };
+
+  const sendChat = async () => {
+    const msg = chatInput.trim();
+    if (!msg || !result?.plan_id) return;
+    setChatMsgs((m) => [...m, { role: "u", text: msg }]);
+    setChatInput("");
+    setChatBusy(true);
+    setChatChange(null);
+    setChatPreview(null);
+    try {
+      const r = await api.chat({ profile_id: profileId, plan_id: result.plan_id, message: msg });
+      setChatMsgs((m) => [...m, { role: "a", text: r.reply }]);
+      setChatChange(r.change);
+      setChatPreview(r.preview);
+    } catch (e: any) {
+      setChatMsgs((m) => [...m, { role: "a", text: e.userMessage || "出错了，稍后再试" }]);
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
+  const applyChat = async () => {
+    if (!chatChange || !result?.plan_id) return;
+    setChatBusy(true);
+    try {
+      const r = await api.chatApply({ profile_id: profileId, plan_id: result.plan_id, change: chatChange });
+      setResult((prev: any) => ({
+        ...prev,
+        plan_id: r.plan_id,
+        plan: { ...prev.plan, blocks: r.blocks, duration_min: r.duration_min },
+      }));
+      setChatMsgs((m) => [...m, { role: "a", text: "已按你的要求更新计划 ✅" }]);
+      setChatChange(null);
+      setChatPreview(null);
+    } catch (e: any) {
+      setChatMsgs((m) => [...m, { role: "a", text: e.userMessage || "应用失败" }]);
+    } finally {
+      setChatBusy(false);
     }
   };
 
@@ -256,6 +302,37 @@ export default function Today() {
                 )}
               </Card>
             ))}
+
+            {/* AI 教练对话 */}
+            <Card>
+              <h2 className="font-display text-lg text-ink">问问教练</h2>
+              <div className="mt-3 space-y-2">
+                {chatMsgs.map((m, i) => (
+                  <div key={i} className={`rounded-2xl px-3 py-2 text-sm ${m.role === "u" ? "ml-8 bg-keylime" : "mr-8 bg-cream"}`}>
+                    {m.text}
+                  </div>
+                ))}
+                {chatBusy && <div className="text-xs text-moss">教练正在想…</div>}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <input className={inputCls()} placeholder="比如：帮我把时间缩到 20 分钟 / 换成徒手" value={chatInput}
+                       onChange={(e) => setChatInput(e.target.value)}
+                       onKeyDown={(e) => e.key === "Enter" && sendChat()} />
+                <PillButton onClick={sendChat} disabled={chatBusy} variant="soft" className="shrink-0">发送</PillButton>
+              </div>
+              {chatPreview && (
+                <div className="mt-3 rounded-2xl border border-meadow bg-keylime/50 p-3">
+                  <div className="text-sm font-medium text-ink">预览新计划（约 {chatPreview.duration_min} 分钟）</div>
+                  <div className="mt-1 text-xs text-moss">
+                    {chatPreview.blocks.find((b: any) => b.type === "main")?.exercises.map((e: any) => e.name_zh).join("、")}
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <PillButton onClick={applyChat} disabled={chatBusy} className="px-4 py-1.5">应用</PillButton>
+                    <PillButton onClick={() => { setChatChange(null); setChatPreview(null); }} variant="ghost" className="px-4 py-1.5">保留原计划</PillButton>
+                  </div>
+                </div>
+              )}
+            </Card>
 
             <Card>
               <h2 className="font-display text-lg text-ink">训练反馈</h2>

@@ -18,6 +18,14 @@ GOAL_PRESETS = {
     "health": {"sets": 2, "reps": "12-15", "rpe": 6, "rest_sec": 60},
 }
 
+# 周期阶段对训练的建议（软建议：只提供上下文与轻度减量，不硬性取消）
+CYCLE_NOTES = {
+    "menstrual": "正处于月经期，建议低冲击、少练一点，不舒服就休息。",
+    "follicular": "处于卵泡期，精力通常较好，适合正常训练。",
+    "ovulation": "处于排卵期，注意充分热身，避免过度疲劳。",
+    "luteal": "处于黄体期，可能情绪或精力波动，按体感减量。",
+}
+
 # 动作模式（顺序即计划顺序）
 PATTERNS = [
     ("squat_pattern", "腿部·蹲"),
@@ -41,10 +49,11 @@ def load_exercises() -> list[dict]:
 def _equipment_ok(ex: dict, profile_equipment: set[str]) -> bool:
     """器械匹配：equipment 列表为“可选替代”（OR 语义），任一项可用即可。
 
+    未选器械（徒手）：只保留无需器械（徒手 / 瑜伽垫）的动作。
     例：高脚杯深蹲可用“哑铃 或 壶铃”，只要有一项可用即满足。
     """
     if not profile_equipment:
-        return ex["home_friendly"]
+        return any(e in {"bodyweight", "gym_mat"} for e in ex["equipment"])
     always = {"bodyweight", "gym_mat"}
     return any(e in profile_equipment or e in always for e in ex["equipment"])
 
@@ -76,7 +85,8 @@ def _duration_min(blocks: list[dict]) -> int:
     return total
 
 
-def build_rationale(checkin: dict, readiness: dict, blocked: set[str], mood_low: bool) -> list[str]:
+def build_rationale(checkin: dict, readiness: dict, blocked: set[str], mood_low: bool,
+                    cycle_phase: str | None = None) -> list[str]:
     reasons = []
     band = readiness["band"]
     if band == "medium":
@@ -91,13 +101,19 @@ def build_rationale(checkin: dict, readiness: dict, blocked: set[str], mood_low:
         reasons.append("已避开伤病部位相关的动作。")
     if mood_low:
         reasons.append("情绪不好没关系，已附上一句暖心安慰，今天少练一点也很好。")
+    if cycle_phase:
+        reasons.append(CYCLE_NOTES.get(cycle_phase, ""))
     if not reasons:
         reasons.append("身体状态正常，按原计划执行。")
     return reasons
 
 
-def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict | None) -> dict:
-    """生成计划（不含 LLM 润色，调用方再决定是否润色 rationale）。"""
+def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict | None,
+                  cycle_phase: str | None = None) -> dict:
+    """生成计划（不含 LLM 润色，调用方再决定是否润色 rationale）。
+
+    cycle_phase：月经期/卵泡期/排卵期/黄体期——只提供软建议与轻度减量。
+    """
     exercises = load_exercises()
     blocked = safety.blocked_swap_groups(profile.get("injured_areas") or [])
     by_pattern = _filtered(exercises, profile, blocked)
@@ -120,6 +136,10 @@ def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict |
         elif band == "low":
             sets = 2
             rpe = 4
+        # 周期软建议：月经期轻度减量
+        if cycle_phase == "menstrual":
+            sets = max(2, sets - 1)
+            rpe = max(4, rpe - 1)
         main_exercises.append({
             "exercise_id": ex["id"],
             "name_zh": ex["name_zh"],
@@ -155,7 +175,7 @@ def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict |
             main_exercises.remove(lowest)
 
     mood_low = comfort is not None
-    rationale = build_rationale(checkin, readiness, blocked, mood_low)
+    rationale = build_rationale(checkin, readiness, blocked, mood_low, cycle_phase)
 
     # 置信度：数据字段齐全度（临时方案）
     present = sum(1 for k in ["energy", "sleep_hours", "soreness", "pain", "mood"]

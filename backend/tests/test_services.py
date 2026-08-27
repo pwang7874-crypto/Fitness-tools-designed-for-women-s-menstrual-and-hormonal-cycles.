@@ -68,21 +68,17 @@ def test_plan_engine_home_filters_out_gym():
     ids = [e["exercise_id"] for b in plan["blocks"] if b["type"] == "main"
            for e in b["exercises"]]
     exs = {e["id"]: e for e in plan_engine.load_exercises()}
-    assert all(exs[i]["home_friendly"] for i in ids)
+    # 未选器械 = 徒手：只允许徒手/瑜伽垫动作
+    assert all(any(x in {"bodyweight", "gym_mat"} for x in exs[i]["equipment"]) for i in ids)
 
 
 def test_plan_engine_equipment_or_semantics():
     # 只有哑铃时，高脚杯深蹲（哑铃或壶铃）应可选；中级可选罗马尼亚硬拉
     profile = {"goal": "health", "experience_level": "intermediate",
                "equipment": ["dumbbell"], "injured_areas": []}
-    checkin = {"available_minutes": 60, "energy": 4, "sleep_hours": 8,
-               "soreness": 0, "pain": "none", "mood": "ok"}
-    r = readiness.compute(4, 8, 0, "none", "ok")
-    plan = plan_engine.generate_plan(profile, checkin, r, None)
-    ids = [e["exercise_id"] for b in plan["blocks"] if b["type"] == "main"
-           for e in b["exercises"]]
-    assert "goblet_squat" in ids
-    assert "romanian_deadlift" in ids
+    by = plan_engine._filtered(plan_engine.load_exercises(), profile, set())
+    assert "goblet_squat" in [e["id"] for e in by.get("squat_pattern", [])]
+    assert "romanian_deadlift" in [e["id"] for e in by.get("hinge_pattern", [])]
 
 
 def test_plan_engine_excludes_injured():
