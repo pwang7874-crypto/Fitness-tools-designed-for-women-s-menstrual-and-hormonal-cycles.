@@ -36,11 +36,80 @@ def test_cycle_predict():
     assert p["next_period"] == (today + timedelta(days=28)).isoformat()
 
 
-def test_mood_keyword_fallback():
-    # 无 API Key 时走关键词兑底，主链路不崩
-    assert mood.analyze("今天好累好烦")["mood"] in ("low", "very_bad")
-    assert mood.analyze("今天很开心元气满满")["mood"] in ("good", "great")
-    assert mood.analyze("")["mood"] == "ok"
+def test_cycle_uses_first_real_interval_before_history_is_ready():
+    from datetime import date, timedelta
+    class R:
+        def __init__(self, d): self.start_date = d
+    today = date.today()
+    p = cycle.predict([R(today - timedelta(days=28)), R(today)], "natural")
+    assert p["status"] == "personal_estimate"
+    assert p["prediction_tier"] == "personal"
+    assert p["avg_cycle"] == 28
+    assert p["phase"] is None
+    assert p["next_period"] is None
+    assert p["next_period_window"]
+
+
+def test_cycle_starts_baseline_estimate_after_first_import():
+    from datetime import date, timedelta
+    class R:
+        def __init__(self, d): self.start_date = d
+    today = date.today()
+    p = cycle.predict(
+        [R(today)],
+        "unknown",
+        configured_cycle_days=30,
+    )
+    assert p["status"] == "baseline_estimate"
+    assert p["prediction_tier"] == "baseline"
+    assert p["avg_cycle"] == 30
+    assert p["phase"] is None
+    assert p["next_period_window"] == {
+        "start": (today + timedelta(days=23)).isoformat(),
+        "end": (today + timedelta(days=37)).isoformat(),
+    }
+
+
+def test_three_week_observation_refresh_does_not_invent_cycle_length():
+    from datetime import date, timedelta
+    class R:
+        def __init__(self, d): self.start_date = d
+    today = date.today()
+    start = today - timedelta(days=20)
+    p = cycle.predict(
+        [R(start)],
+        "natural",
+        today=today,
+        configured_cycle_days=28,
+        observed_checkin_days=12,
+    )
+    assert p["observation"]["complete"] is True
+    assert p["observation"]["logged_days"] == 12
+    assert p["status"] == "baseline_estimate"
+    assert p["prediction_basis"] == "你填写的典型周期 28 天"
+    assert p["phase"] is None
+
+
+def test_irregular_cycle_never_shows_exact_phase():
+    from datetime import date, timedelta
+    class R:
+        def __init__(self, d): self.start_date = d
+    today = date.today()
+    p = cycle.predict([
+        R(today - timedelta(days=68)),
+        R(today - timedelta(days=37)),
+        R(today),
+    ], "irregular")
+    assert p["status"] == "low_confidence"
+    assert p["phase"] is None
+    assert p["next_period"] is None
+    assert p["next_period_window"]
+
+
+def test_mood_is_manual_and_diary_is_not_analyzed():
+    assert mood.select("low")["mood"] == "low"
+    assert mood.select("great")["mood"] == "great"
+    assert mood.analyze("无论日记写什么都不推断")["mood"] == "ok"
 
 
 def test_safety_red_flag_hit():
@@ -140,6 +209,16 @@ def test_plan_engine_trim_to_time():
     assert plan["duration_min"] <= 15
 
 
+def test_plan_confidence_does_not_treat_defaults_as_observed():
+    profile = {"goal": "health", "experience_level": "beginner",
+               "equipment": [], "injured_areas": []}
+    checkin = {"available_minutes": 40, "energy": 3, "sleep_hours": 7,
+               "soreness": 0, "pain": "none", "mood": "ok"}
+    r = readiness.compute(3, 7, 0, "none", "ok")
+    plan = plan_engine.generate_plan(profile, checkin, r, None)
+    assert plan["confidence"] == 0.5
+
+
 def test_validator_pass():
     profile = {"experience_level": "beginner", "session_minutes": 60,
                "injured_areas": [], "equipment": []}
@@ -160,3 +239,19 @@ def test_validator_rejects_unknown_exercise():
     result = validator.validate(plan, profile)
     assert result["status"] == "revise"
     assert any("审核动作库" in i for i in result["issues"])
+
+
+def test_validator_rejects_wrong_equipment_and_level():
+    profile = {"experience_level": "beginner", "session_minutes": 60,
+               "available_minutes": 60, "injured_areas": [], "equipment": []}
+    plan = {"duration_min": 8, "blocks": [
+        {"type": "warmup", "duration_min": 3},
+        {"type": "main", "exercises": [{
+            "exercise_id": "barbell_squat", "name_zh": "杠铃深蹲",
+            "sets": 2, "reps": "5-8", "rpe": 6, "rest_sec": 60,
+        }]},
+        {"type": "cooldown", "duration_min": 2},
+    ]}
+    result = validator.validate(plan, profile)
+    assert result["status"] == "revise"
+    assert any("器械不可用" in issue or "难度" in issue for issue in result["issues"])

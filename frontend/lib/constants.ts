@@ -1,13 +1,13 @@
 export const MOODS = [
-  { value: "very_bad", label: "很糟", emoji: "😞" },
-  { value: "low", label: "有点低", emoji: "😕" },
-  { value: "ok", label: "平静", emoji: "😐" },
-  { value: "good", label: "不错", emoji: "🙂" },
-  { value: "great", label: "很好", emoji: "😄" },
+  { value: "very_bad", label: "很糟", icon: "mood-rain" },
+  { value: "low", label: "有点低", icon: "mood-cloud" },
+  { value: "ok", label: "平静", icon: "mood-horizon" },
+  { value: "good", label: "不错", icon: "mood-sun" },
+  { value: "great", label: "很好", icon: "mood-spark" },
 ];
 
-export const MOOD_EMOJI: Record<string, string> = {
-  very_bad: "😞", low: "😕", ok: "😐", good: "🙂", great: "😄",
+export const MOOD_ICON: Record<string, string> = {
+  very_bad: "mood-rain", low: "mood-cloud", ok: "mood-horizon", good: "mood-sun", great: "mood-spark",
 };
 
 export const EQUIPMENT = [
@@ -51,29 +51,54 @@ export const CYCLE_MODES = [
   { value: "natural", label: "自然周期" },
   { value: "hormonal", label: "激素避孕" },
   { value: "irregular", label: "周期不规律" },
-  { value: "unknown", label: "不愿填写" },
+  { value: "unknown", label: "不确定（仅估算日期）" },
 ];
 
 // 身体状态：用可点选的标签量化，而不是输入抽象数字
 export const ENERGY_OPTIONS = [
-  { value: "1", label: "很累", emoji: "😫" },
-  { value: "2", label: "有点累", emoji: "😕" },
-  { value: "3", label: "一般", emoji: "😐" },
-  { value: "4", label: "不错", emoji: "🙂" },
-  { value: "5", label: "精力充沛", emoji: "⚡" },
+  { value: "1", label: "很累", icon: "energy-empty" },
+  { value: "2", label: "有点累", icon: "energy-low" },
+  { value: "3", label: "一般", icon: "energy-steady" },
+  { value: "4", label: "不错", icon: "energy-high" },
+  { value: "5", label: "精力充沛", icon: "energy-spark" },
 ];
 
 export const SLEEP_OPTIONS = [
-  { value: "5", label: "没睡好 · <6h", emoji: "😴" },
-  { value: "7", label: "一般 · 6–8h", emoji: "🙂" },
-  { value: "8.5", label: "睡得好 · >8h", emoji: "😄" },
+  { value: "5", label: "没睡好 · <6h", icon: "sleep-low" },
+  { value: "7", label: "一般 · 6–8h", icon: "sleep-calm" },
+  { value: "8.5", label: "睡得好 · >8h", icon: "sleep-rested" },
 ];
 
 export const SORENESS_OPTIONS = [
-  { value: "0", label: "不酸", emoji: "🟢" },
-  { value: "1", label: "轻微", emoji: "🟡" },
-  { value: "3", label: "明显", emoji: "🟠" },
-  { value: "5", label: "很酸", emoji: "🔴" },
+  { value: "0", label: "不酸", icon: "body-clear" },
+  { value: "1", label: "轻微", icon: "body-mild" },
+  { value: "3", label: "明显", icon: "body-medium" },
+  { value: "5", label: "很酸", icon: "body-high" },
+];
+
+export const STRESS_OPTIONS = [
+  { value: "1", label: "很轻松" },
+  { value: "2", label: "较轻" },
+  { value: "3", label: "一般" },
+  { value: "4", label: "偏高" },
+  { value: "5", label: "很高" },
+];
+
+export const SYMPTOMS = [
+  { value: "cramps", label: "腹部不适" },
+  { value: "headache", label: "头痛" },
+  { value: "bloating", label: "腹胀" },
+  { value: "breast_tenderness", label: "乳房胀痛" },
+  { value: "nausea", label: "恶心" },
+  { value: "fatigue", label: "明显疲劳" },
+];
+
+export const BLEEDING_OPTIONS = [
+  { value: "none", label: "无" },
+  { value: "spotting", label: "点滴" },
+  { value: "light", label: "少量" },
+  { value: "medium", label: "中等" },
+  { value: "heavy", label: "较多" },
 ];
 
 export const MUSCLE_ZH: Record<string, string> = {

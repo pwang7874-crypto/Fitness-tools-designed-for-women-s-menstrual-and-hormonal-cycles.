@@ -1,65 +1,100 @@
 "use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { api } from "@/lib/api";
-import { MOOD_EMOJI } from "@/lib/constants";
-import { Card, Tag, HeroTitle, LeafIcon } from "@/components/ui";
 
-export default function Diary() {
-  const [profileId, setProfileId] = useState<number | null>(null);
-  const [diaries, setDiaries] = useState<any[]>([]);
-  const [err, setErr] = useState("");
+import { useCallback, useEffect, useState } from "react";
+import { api, type DiaryRecord } from "@/lib/api";
+import { MOOD_ICON } from "@/lib/constants";
+import StatusIcon from "@/components/StatusIcon";
+import { errorMessage } from "@/lib/utils";
+import { useProfile } from "@/lib/useProfile";
+import {
+  Card, EmptyState, ErrorBanner, LinkButton, LoadingState, PageHero, SectionHeading, Tag,
+} from "@/components/ui";
 
-  useEffect(() => {
-    const id = localStorage.getItem("profile_id");
-    if (!id) return;
-    setProfileId(+id);
-    api.diaries(+id).then(setDiaries).catch((e) => setErr(e.userMessage));
+export default function DiaryPage() {
+  const { profile, loading } = useProfile();
+  const [diaries, setDiaries] = useState<DiaryRecord[]>([]);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async (profileId: number) => {
+    try {
+      setDiaries(await api.diaries(profileId));
+    } catch (reason) {
+      setError(errorMessage(reason, "无法读取私密记录"));
+    }
   }, []);
 
-  if (!profileId) {
+  useEffect(() => {
+    if (profile?.mood_consent) void load(profile.profile_id);
+  }, [profile, load]);
+
+  if (loading) return <LoadingState label="正在读取你的私密记录" />;
+  if (!profile) {
+    return <EmptyState title="尚未建立档案" description="先完成建档，才能决定是否保存心情与私密记录。"
+      action={<LinkButton href="/onboarding">开始建档</LinkButton>} />;
+  }
+  if (!profile.mood_consent) {
     return (
-      <div className="mx-auto max-w-3xl px-4 pt-20 text-center">
-        <LeafIcon className="mx-auto h-16 w-16" />
-        <h1 className="font-display mt-4 text-3xl text-ink">日记</h1>
-        <p className="mt-2 text-sm text-moss">先建立档案，才能记录你的每一天。</p>
-        <Link href="/onboarding" className="mt-6 inline-block rounded-full bg-ink px-8 py-3 text-sm font-medium text-cream">
-          开始建档
-        </Link>
-      </div>
+      <>
+        <PageHero eyebrow="Diary · 记录" title="文字留给" accent="你自己" description="你没有开启情绪与日记授权，因此这里不会保存内容。" />
+        <EmptyState title="私密记录未启用" description="如需启用，请前往“我的”。日记不会被 AI 分析或用于推断情绪。"
+          action={<LinkButton href="/profile">管理授权</LinkButton>} />
+      </>
     );
   }
 
+  const remove = async (id: number) => {
+    if (!window.confirm("只删除这篇日记原文？当天的非文本状态打卡仍会保留。")) return;
+    try {
+      await api.deleteDiary(profile.profile_id, id);
+      await load(profile.profile_id);
+    } catch (reason) {
+      setError(errorMessage(reason, "删除失败"));
+    }
+  };
+
   return (
     <div>
-      <section className="bg-keylime/70">
-        <div className="mx-auto flex max-w-3xl items-end justify-between px-4 py-8">
-          <div>
-            <HeroTitle eyebrow="Diary · 日记" lines={[{ text: "每一天的" }, { text: "自己", accent: true }]} />
-            <p className="mt-2 text-sm text-ink/70">回看写下的心情，看见自己的变化。</p>
+      <PageHero
+        eyebrow="Diary · 记录"
+        title="写过的日子"
+        accent="不被解读"
+        description="情绪标签来自你自己的五档选择。日记原文只供回看，不发送给 AI，不做诊断。"
+        aside={
+          <div className="hero-inset w-full rounded-[20px] bg-cream p-5">
+            <div className="eyebrow">Privacy</div>
+            <div className="font-display mt-3 text-3xl text-ink">No mood inference</div>
+            <p className="mt-5 text-xs leading-5 text-moss">你可以单独删除任一篇日记，也可以在“我的”导出或删除全部数据。</p>
           </div>
-          <LeafIcon className="h-16 w-16 shrink-0 opacity-80" />
-        </div>
-      </section>
+        }
+      />
 
-      <div className="mx-auto max-w-3xl space-y-3 px-4">
-        {err && <Card><p className="text-sm text-danger">{err}</p></Card>}
-        {!diaries.length && !err && (
-          <Card>
-            <p className="text-sm text-moss">
-              还没有日记。去 <Link href="/" className="text-meadow underline">今日</Link> 写第一篇吧。
-            </p>
+      <div className="page-shell pb-14">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <SectionHeading eyebrow="Your notes" title={diaries.length ? `${diaries.length} 篇私密记录` : "还没有记录"} />
+          <LinkButton href="/">回到今日记录</LinkButton>
+        </div>
+        {error && <div className="mb-3"><ErrorBanner message={error} /></div>}
+        {!diaries.length ? (
+          <Card tint="bg-keylime">
+            <p className="text-sm leading-6 text-moss">今日打卡时可选择心情并写下第一篇私密备注。</p>
           </Card>
+        ) : (
+          <div className="stagger grid gap-3 md:grid-cols-2">
+            {diaries.map((diary) => (
+              <Card key={diary.id} tint="bg-cream-2" className="flex min-h-56 flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-moss">{diary.day}</span>
+                    <Tag tone="sage"><StatusIcon name={MOOD_ICON[diary.mood]} className="!h-5 !w-5" /> {diary.tag}</Tag>
+                  </div>
+                  <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-charcoal">{diary.diary}</p>
+                </div>
+                <button type="button" className="interactive mt-6 self-start rounded-[7px] px-2 py-1 text-xs text-danger hover:bg-danger/8"
+                  onClick={() => void remove(diary.id)}>删除这篇原文</button>
+              </Card>
+            ))}
+          </div>
         )}
-        {diaries.map((d) => (
-          <Card key={d.id}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-moss">{d.day}</span>
-              <Tag tone="rose">{MOOD_EMOJI[d.mood] || "😐"} {d.tag || d.mood}</Tag>
-            </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-charcoal">{d.diary}</p>
-          </Card>
-        ))}
       </div>
     </div>
   );

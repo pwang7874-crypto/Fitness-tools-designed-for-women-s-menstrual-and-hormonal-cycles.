@@ -73,7 +73,7 @@ def _filtered(exercises: list[dict], profile: dict, blocked: set[str]) -> dict[s
     return by_pattern
 
 
-def _duration_min(blocks: list[dict]) -> int:
+def duration_min(blocks: list[dict]) -> int:
     total = 0
     for b in blocks:
         if b["type"] in ("warmup", "cooldown"):
@@ -97,12 +97,16 @@ def build_rationale(checkin: dict, readiness: dict, blocked: set[str], mood_low:
         reasons.append("肌肉酸痛较明显，减少了相关部位的训练量。")
     if checkin.get("sleep_hours", 8) < 6:
         reasons.append("睡眠不足，降低了今天的训练总量。")
+    if checkin.get("stress", 3) >= 4:
+        reasons.append("今天压力偏高，计划保持简单，并预留了更多恢复空间。")
+    if checkin.get("symptoms") or checkin.get("bleeding") in {"medium", "heavy"}:
+        reasons.append("已结合你手动记录的症状与出血情况做保守调整。")
     if blocked:
         reasons.append("已避开伤病部位相关的动作。")
     if mood_low:
         reasons.append("情绪不好没关系，已附上一句暖心安慰，今天少练一点也很好。")
     if cycle_phase:
-        reasons.append(CYCLE_NOTES.get(cycle_phase, ""))
+        reasons.append(CYCLE_NOTES.get(cycle_phase, "周期阶段仅作背景信息，训练仍以当天体感为准。"))
     if not reasons:
         reasons.append("身体状态正常，按原计划执行。")
     return reasons
@@ -121,6 +125,7 @@ def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict |
     band = readiness["band"]
     preset = dict(GOAL_PRESETS.get(profile.get("goal", "health"), GOAL_PRESETS["health"]))
 
+    symptom_sensitive = bool(checkin.get("symptoms")) or checkin.get("bleeding") == "heavy"
     main_exercises = []
     for pattern, _label in PATTERNS:
         candidates = by_pattern.get(pattern, [])
@@ -136,8 +141,8 @@ def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict |
         elif band == "low":
             sets = 2
             rpe = 4
-        # 周期软建议：月经期轻度减量
-        if cycle_phase == "menstrual":
+        # 症状是显式输入；周期标签本身不触发增减量。
+        if symptom_sensitive:
             sets = max(2, sets - 1)
             rpe = max(4, rpe - 1)
         main_exercises.append({
@@ -146,6 +151,9 @@ def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict |
             "name_en": ex["name_en"],
             "category": ex["category"],
             "primary_muscles": ex["primary_muscles"],
+            "swap_group": ex["swap_group"],
+            "equipment": ex["equipment"],
+            "level": ex["level"],
             "sets": sets,
             "reps": reps,
             "rpe": rpe,
@@ -153,22 +161,24 @@ def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict |
             "swap_alternatives": [a["id"] for a in candidates[1:3]],
         })
 
+    available = int(checkin.get("available_minutes", 40))
+    warmup_min, cooldown_min = (3, 2) if available < 20 else (5, 3)
     blocks = [
-        {"type": "warmup", "title": "热身", "duration_min": 5,
-         "items": ["轻松有氧或动态拉伸 5 分钟，让身体微微发热"]},
+        {"type": "warmup", "title": "热身", "duration_min": warmup_min,
+         "items": [f"轻松有氧或动态活动 {warmup_min} 分钟，让身体微微发热"]},
         {"type": "main", "title": "主训练", "exercises": main_exercises},
-        {"type": "cooldown", "title": "整理", "duration_min": 3,
-         "items": ["静态拉伸 3 分钟，重点放松今天训练的部位"]},
+        {"type": "cooldown", "title": "整理", "duration_min": cooldown_min,
+         "items": [f"舒缓呼吸与整理活动 {cooldown_min} 分钟"]},
     ]
 
-    # 按可用时间裁剪：先减组数，再删孤立动作（保留蹲/推/拉/核心）
-    available = checkin.get("available_minutes", 40)
+    # 按可用时间裁剪：先减低优先级动作的组数，再删除；尽量保留蹲/推/拉/核心。
     keep_patterns_priority = {"squat_pattern", "hinge_pattern", "horizontal_push",
                               "horizontal_pull", "core_flexion", "core_static"}
-    while _duration_min(blocks) > available and main_exercises:
-        # 优先裁掉优先级最低的动作
-        lowest = min(main_exercises,
-                     key=lambda e: 0 if e["exercise_id"] in keep_patterns_priority else 1)
+    while duration_min(blocks) > available and main_exercises:
+        lowest = next(
+            (e for e in reversed(main_exercises) if e["swap_group"] not in keep_patterns_priority),
+            main_exercises[-1],
+        )
         if lowest["sets"] > 2:
             lowest["sets"] -= 1
         else:
@@ -177,20 +187,53 @@ def generate_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict |
     mood_low = comfort is not None
     rationale = build_rationale(checkin, readiness, blocked, mood_low, cycle_phase)
 
-    # 置信度：数据字段齐全度（临时方案）
-    present = sum(1 for k in ["energy", "sleep_hours", "soreness", "pain", "mood"]
-                  if checkin.get(k) not in (None, ""))
-    confidence = round(min(1.0, 0.4 + 0.12 * present), 2)
+    # 置信度表达“有多少真实上下文”，不会因默认值而自动满分。
+    provided = set(checkin.get("_provided_fields") or [])
+    core = {"energy", "sleep_hours", "soreness", "pain", "mood", "stress"}
+    explicit_ratio = len(core & provided) / len(core)
+    history_count = int(checkin.get("_history_count", 0))
+    confidence = round(min(0.92, 0.5 + 0.28 * explicit_ratio + 0.04 * min(history_count, 3)), 2)
+    confidence_factors = [
+        f"本次主动填写 {len(core & provided)}/{len(core)} 项核心状态",
+        f"参考 {history_count} 次既往训练反馈" if history_count else "尚无既往训练反馈",
+        "周期只作背景，不参与置信度加分",
+    ]
 
     return {
         "goal": profile.get("goal", "health"),
-        "duration_min": _duration_min(blocks),
+        "duration_min": duration_min(blocks),
         "readiness_band": band,
         "readiness_label": readiness["label"],
         "mood": checkin.get("mood", "ok"),
         "confidence": confidence,
+        "confidence_factors": confidence_factors,
         "comfort_msg": comfort["comfort_msg"] if comfort else "",
         "rest_suggestion": comfort["rest_suggestion"] if comfort else "",
         "rationale": rationale,
         "blocks": blocks,
     }
+
+
+def fallback_plan(profile: dict, checkin: dict, readiness: dict, comfort: dict | None) -> dict:
+    """仍从同一审核/器械/伤病过滤链路生成确定性保守兜底。"""
+    conservative = {
+        **profile,
+        "goal": "health",
+        "experience_level": "beginner",
+    }
+    safe_readiness = {**readiness, "band": "low", "label": "保守模式"}
+    plan = generate_plan(conservative, checkin, safe_readiness, comfort, None)
+    main = next((b for b in plan["blocks"] if b["type"] == "main"), None)
+    if not main or not main["exercises"]:
+        plan.update({
+            "mode": "rest",
+            "duration_min": min(10, int(checkin.get("available_minutes", 10))),
+            "blocks": [{
+                "type": "recovery",
+                "title": "今天先恢复",
+                "duration_min": min(10, int(checkin.get("available_minutes", 10))),
+                "items": ["暂停正式训练；做舒缓呼吸或完全休息。如不适持续或加重，请咨询专业人员。"],
+            }],
+        })
+    plan["rationale"] = ["原计划未通过校验，已切换为通过同一安全规则筛选的保守方案。"]
+    return plan

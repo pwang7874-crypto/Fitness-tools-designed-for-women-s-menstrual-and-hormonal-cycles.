@@ -83,7 +83,10 @@ def apply_change(profile: dict, checkin: dict, readiness: dict, cycle_phase: str
     c = comfort.get_comfort(mood)
 
     if t == "duration":
-        new_checkin = {**checkin, "available_minutes": int(change.get("value", checkin.get("available_minutes", 40)))}
+        value = int(change.get("value", checkin.get("available_minutes", 40)))
+        if not 10 <= value <= 180:
+            raise ValueError("duration out of range")
+        new_checkin = {**checkin, "available_minutes": value}
         return plan_engine.generate_plan(profile, new_checkin, readiness, c, cycle_phase)
 
     if t == "equipment":
@@ -97,6 +100,7 @@ def apply_change(profile: dict, checkin: dict, readiness: dict, cycle_phase: str
         if not to:
             raise ValueError("unknown exercise")
         new_plan = copy.deepcopy(plan)
+        changed = False
         for b in new_plan["blocks"]:
             if b["type"] == "main":
                 for e in b["exercises"]:
@@ -106,7 +110,14 @@ def apply_change(profile: dict, checkin: dict, readiness: dict, cycle_phase: str
                         e["name_en"] = to["name_en"]
                         e["category"] = to["category"]
                         e["primary_muscles"] = to["primary_muscles"]
+                        e["swap_group"] = to["swap_group"]
+                        e["equipment"] = to["equipment"]
+                        e["level"] = to["level"]
                         e["swap_alternatives"] = []
+                        changed = True
+        if not changed:
+            raise ValueError("source exercise not in plan")
+        new_plan["duration_min"] = plan_engine.duration_min(new_plan["blocks"])
         return new_plan
 
     raise ValueError("unknown change type")

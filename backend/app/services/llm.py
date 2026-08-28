@@ -16,7 +16,7 @@ class LLMError(Exception):
 
 def _messages(prompt: str) -> list[dict]:
     return [
-        {"role": "system", "content": "你是 CycleFit AI 的教练助手，用温柔、不评判、给许可感的中文语气回应用户。"},
+        {"role": "system", "content": "你是顺期健身app的教练助手，用温柔、不评判、给许可感的中文语气回应用户。"},
         {"role": "user", "content": prompt},
     ]
 
