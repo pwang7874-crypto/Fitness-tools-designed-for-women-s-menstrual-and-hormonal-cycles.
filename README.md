@@ -6,6 +6,17 @@
 
 产品边界：顺期健身app 是训练辅助工具，不提供诊断、治疗、排卵确认或避孕判断。
 
+## 线上受邀内测
+
+- Web：<https://sbcejds882ht7of2dtslu.apigateway-cn-beijing.volceapi.com/>
+- API：<https://snc79cdfrhj86otkgqnhe.apigateway-cn-beijing.volceapi.com/>
+- 区域：火山引擎 veFaaS `cn-beijing`
+- 前端应用：`shunqi-fitness-web`（`4ee28c0c96fd`）
+- 后端应用：`shunqi-fitness-backend`（`967a4142694e`）
+- APIG 网关：`bakemate-gateway`（`gda76hv0t7m0sepu6j40g`）
+
+线上环境启用了管理员发放的邀请码、Secure/HttpOnly 设备私有会话和弹性实例。弹性实例缩容后首次访问可能出现冷启动。当前数据库位于实例临时目录，TOS 备份尚未启用，因此这里只适合受邀体验，不应保存需要长期留存的真实健康数据。
+
 ## 本轮 V0.3 优化
 
 - 情绪改为五档手动选择；日记只保存供用户回看，不发送给模型、不自动分析。
@@ -73,8 +84,8 @@ THIRD_PARTY_NOTICES.md
 - 无模型 Key 时，调整理由使用确定性规则文案；主链路仍可工作。
 - 教练只接收结构化训练上下文。
 - 日记原文、备注原文、精确经期日期和访问令牌不会进入模型提示词。
-- 本轮没有调用真实付费模型；上线前应按受控冒烟流程验证成本、超时和脱敏。
+- 本地自动化测试禁止调用真实模型；线上环境仅使用模型润色非敏感训练理由和处理结构化教练请求，失败时确定性降级，安全决策不依赖模型。
 
 ## 生产差距
 
-当前仍是可完整验收的 Web MVP，不等于生产完成。正式上线前需要 PostgreSQL + Alembic、正式账号恢复/多设备登录、CSRF 和速率限制、Sentry/trace、运动科学评审、Playwright 旅程测试以及真实模型受控冒烟。详见 docs/技术适配声明_V0.2.md。
+当前是已上线的受邀内测 Web MVP，不等于生产完成。正式开放前至少需要持久化数据库与备份、正式账号恢复/多设备登录、CSRF 和速率限制、错误监控、运动科学评审及浏览器端旅程测试。详见 docs/技术适配声明_V0.2.md。
